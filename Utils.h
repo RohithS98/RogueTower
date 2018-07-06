@@ -26,4 +26,8 @@ class Vector2{
 		return Vector2(0,0);
 	}
 };
+
+namespace global{
+	const int TILE_SIZE = 15;
+}
 #endif

@@ -1,6 +1,16 @@
 #include "FloorMap.h"
 #include <queue>
 
+bool Room::isIntersecting(Room room){
+	if (x >= room.x + room.w+5 || w + x <= room.x-5)
+        return false;
+ 
+     if (y >= room.y + room.h+5 || y + h <= room.y-5)
+        return false;
+ 
+    return true;
+}
+
 FloorMap::FloorMap(){
 	;
 }
@@ -10,9 +20,7 @@ FloorMap::FloorMap(Graphics &graphics){
 	int seed = time(NULL);
 	printf("Seed:%d\n",seed);
 	srand(seed);
-	VIEWSIZE = 10;
 	roomList = NULL;
-	newData = false;
 	playerPos = Vector2(-1,-1);
 	floorNo = 1;
 	currentEnemyProcess = -1;
@@ -24,316 +32,23 @@ FloorMap::~FloorMap(){
 	free();
 }
 
-void FloorMap::setFloor(int floorNo){
+void FloorMap::free(){
+	if(roomList!=NULL)
+		delete[] roomList;
+	enemyList.erase(enemyList.begin(),enemyList.end());
+}
+
+void FloorMap::setFloor(Logger &log, int floorNo){
 	this->floorNo = floorNo;
+	log.logNewFloor(this->floorNo);
 }
 
-int FloorMap::getChestNo(){
-	return 6;
-}
-
-void FloorMap::fillBlock(int x, int y, int width, int height,int block_type){
-	for(int i = 0 ; i < height ; i++){
-		for(int j = 0; j < width; j++){
-			floorMap[y+i][x+j] = block_type;
-		}
-	}
-}
-
-Vector2 FloorMap::putPlayer(){
-	int rno = getRand(0,troom-1);
-	bool flag = true;
-	int tx = roomList[rno].y+roomList[rno].h/2;
-	int ty = roomList[rno].x+roomList[rno].w/2;
-	while(flag){
-		tx = getRand(roomList[rno].y+1,roomList[rno].y+roomList[rno].h-1);
-		ty = getRand(roomList[rno].x+1,roomList[rno].x+roomList[rno].w-1);
-		if(isFree(tx,ty)){
-			flag = false;
-		}
-	}
-	playerPos = Vector2(tx,ty);
-	return getPlayerPos();
-}
-
-Vector2 FloorMap::getPlayerPos(){
-	return playerPos;
-}
-
-void FloorMap::render(Graphics &graphics){
-	for(int i = 0; i < mHeight; i++){
-		for(int j = 0; j < mWidth ; j++){
-			SDL_Rect destRect = {j*TILE_SIZE,i*TILE_SIZE,TILE_SIZE,TILE_SIZE};
-			graphics.blitSurface(this->blockSprites,getSpriteRect(floorMap[i][j]),
-									&destRect);
-		}
-	}
-}
-
-SDL_Rect* FloorMap::getSpriteRect(int sprite){
-	return &tileClip[sprite];
-}
-
-void FloorMap::setSprites(){
-	SDL_Rect r = {0,0,100,100};
-	tileClip.push_back(r);
-	tileClip.push_back(r);
-	SDL_Rect r2 = {100,0,100,100};
-	tileClip.push_back(r2);
-	tileClip.push_back(r);
-	SDL_Rect r4 = {200,0,100,100};
-	tileClip.push_back(r4);
-	SDL_Rect r5 = {400,0,100,100};
-	tileClip.push_back(r5);
-	SDL_Rect r6 = {500,0,100,100};
-	tileClip.push_back(r6);
-	tileClip.push_back(r);
-	tileClip.push_back(r);
-	SDL_Rect r9 = {0,100,100,100};
-	tileClip.push_back(r9);
-}
-
-/*
-void FloorMap::attackEnemy(int eno){
-	currentKey = 0;
-	eno-=1;
-	//log.logAttack(player.pName,enemyList[eno].name);
-	int t = damageCalc(enemyList[eno],player);
-	if(t)
-		log.logDamage(player.pName,enemyList[eno].name,t);
-	else
-		log.logMiss(player.pName);
-	if(enemyList[eno].getHit(t)){
-		log.logKilled(enemyList[eno].name);
-		enemyList.erase(enemyList.begin()+eno);
-	}
-	//log.logLine();
-}
-
-bool FloorMap::movePlayer(int direction){
-	bool ret = false;
-	int t = -1;
-	switch(direction){
-		case UP:
-			if(isFree(playerX-1,playerY)){
-			playerX--;ret=true;
-			}
-			else if(t = isEnemy(playerX-1,playerY)){
-				ret=true;
-				attackEnemy(t);
-			}
-			break;
-		case LEFT:
-			if(isFree(playerX,playerY-1)){
-			playerY--;ret=true;
-			}
-			else if(t = isEnemy(playerX,playerY-1)){
-				ret=true;
-				attackEnemy(t);
-			}
-			break;
-		case DOWN:
-			if(isFree(playerX+1,playerY)){
-			playerX++;ret=true;
-			}
-			else if(t = isEnemy(playerX+1,playerY)){
-				ret=true;
-				attackEnemy(t);
-			}
-			break;
-		case RIGHT:
-			if(isFree(playerX,playerY+1)){
-			playerY++;ret=true;
-			}
-			else if(t = isEnemy(playerX,playerY+1)){
-				ret=true;
-				attackEnemy(t);
-			}
-			break;
-	}
-	updateView();
-	return ret;
-}*/
-
-void FloorMap::convert(int px, int py){
-	switch(floorMap[px][py]){
-		case EMPTYOUT:
-			floorMap[px][py] = EMPTYSEEN;
-			break;
-		case CHESTOUT:
-			floorMap[px][py] = CHESTCLOSED;
-			break;
-		case WALLEDGEOUT:
-			floorMap[px][py] = WALLEDGE;
-			break;
-	}
-}
-
-bool FloorMap::inbounds(int px, int py){
-	if(py < mWidth && px >=0 && px < mHeight && py >=0){
-		return true;
-	}
-	return false;
-}
-
-void FloorMap::checkEnemy(int x,int y){
-	for(int i = 0; i < enemyList.size(); i++){
-		if(enemyList[i].x == x && enemyList[i].y == y){
-			enemyList[i].setVisible();
-		}
-	}
-}
-
-void FloorMap::setEnemyInvisible(){
-	for(int i = 0; i < enemyList.size(); i++){
-		enemyList[i].setInvisible();
-	}
-}
-
-void FloorMap::updateView(int x, int y){
-	std::queue<int> q1,q2,q3;
-	q1.push(x);q2.push(y);q3.push(VIEWSIZE);
-	bool visited[mHeight][mWidth];
-	for(int i = 0; i < mHeight ; i++){
-		for(int j = 0; j < mWidth ; j++){
-			visited[i][j] = false;
-		}
-	}
-	setEnemyInvisible();
-	visited[playerX][playerY] = true;
-	while(!q1.empty()){
-		int t1 = q1.front(),t2 = q2.front(), t3 = q3.front();
-		q1.pop();q2.pop();q3.pop();
-		if(t3-1 && !visited[t1-1][t2] && floorMap[t1-1][t2]!=WALL && floorMap[t1-1][t2]!=WALLEDGE){
-			q1.push(t1-1);q2.push(t2);q3.push(t3-1);visited[t1-1][t2] = true;
-		}
-		else if(floorMap[t1-1][t2]==WALLEDGE){
-			convert(t1-1,t2);
-		}
-		if(t3-1 && !visited[t1+1][t2] && floorMap[t1+1][t2]!=WALL&& floorMap[t1+1][t2]!=WALLEDGE){
-			q1.push(t1+1);q2.push(t2);q3.push(t3-1);visited[t1+1][t2] = true;
-		}
-		else if(floorMap[t1+1][t2]==WALLEDGE){
-			convert(t1+1,t2);
-		}
-		if(t3-1 && !visited[t1][t2+1] && floorMap[t1][t2+1]!=WALL && floorMap[t1][t2+1]!=WALLEDGE){
-			q1.push(t1);q2.push(t2+1);q3.push(t3-1);visited[t1][t2+1] = true;
-		}
-		else if(floorMap[t1-1][t2+1]==WALLEDGE){
-			convert(t1,t2+1);
-		}
-		if(t3-1 && !visited[t1][t2-1] && floorMap[t1][t2-1]!=WALL && floorMap[t1][t2-1]!=WALLEDGE){
-			q1.push(t1);q2.push(t2-1);q3.push(t3-1);visited[t1][t2-1] = true;
-		}
-		else if(floorMap[t1][t2-1]==WALLEDGE){
-			convert(t1,t2-1);
-		}
-		convert(t1,t2);
-		checkEnemy(t1,t2);
-	}
-}
-
-bool Room::isIntersecting(Room room){
-	if (x >= room.x + room.w+5 || w + x <= room.x-5)
-        return false;
- 
-     if (y >= room.y + room.h+5 || y + h <= room.y-5)
-        return false;
- 
-    return true;
-}
-
-void FloorMap::fillBlock(Room room, int block_type){
-	fillBlock(room.x,room.y,room.w,room.h,block_type);
-}
-
-int FloorMap::getBlock(int x, int y){
-	return floorMap[x][y];
-}
-
-void FloorMap::makePath(int sx, int sy, int ex, int ey){
-	if(getRand(0,1)){
-		if(sx > ex){
-			swap(sx,ex);
-			swap(sy,ey);
-		}
-		int tt = 1;
-		fillBlock(sx,sy,ex-sx+1,tt);
-		fillBlock(ex,min(ey,sy),tt,max(ey,sy)-min(ey,sy));
-	}
-	else{
-		if(sy > ey){
-			swap(sx,ex);
-			swap(sy,ey);
-		}
-		int tt = 1;
-		fillBlock(sx,sy,tt,ey-sy+1);
-		fillBlock(min(ex,sx),ey,max(ex,sx)-min(ex,sx),tt);
-	}
-}
-
-bool FloorMap::emptyNeighbour(int x, int y){
-	if( floorMap[x][y] == EMPTYOUT && floorMap[x-1][y] == EMPTYOUT && floorMap[x+1][y] == EMPTYOUT && floorMap[x][y+1] == EMPTYOUT && floorMap[x][y-1] == EMPTYOUT){
-		floorMap[x][y] = CHESTOUT;
-		return true;
-	}
-	return false;
-}
-
-void FloorMap::setBorders(){
-	for(int i = 1 ; i < mHeight-1 ; i++){
-		for(int j = 1 ; j < mWidth-1 ; j++){
-			if(floorMap[i][j] == WALL && (floorMap[i-1][j]==EMPTYOUT||floorMap[i+1][j]==EMPTYOUT||floorMap[i][j+1]==EMPTYOUT||floorMap[i][j-1]==EMPTYOUT)){
-				floorMap[i][j] = WALLEDGEOUT;
-			}
-		}
-	}
-}
-
-bool FloorMap::joinRoom(int a, int b){
-	if(a==b){
-		return false;
-	}
-	int startx = roomList[a].x + getRand(3,roomList[a].w-3),
-		starty = roomList[a].y + getRand(3,roomList[a].h-3),
-		endx = roomList[b].x + getRand(3,roomList[b].w-3),
-		endy = roomList[b].y + getRand(3,roomList[b].h-3);
-	makePath(startx,starty,endx,endy);
-	return true;
-}
-/*
-void FloorMap::addEnemies(int e){
-	for(int i = 0; i < e ; ){
-		int rno = getRand(0,troom-1),tx,ty;
-		bool flag = true;
-		while(flag){
-			tx = getRand(roomList[rno].y+1,roomList[rno].y+roomList[rno].h-1);
-			ty = getRand(roomList[rno].x+1,roomList[rno].x+roomList[rno].w-1);
-			if(floorMap[tx][ty] == EMPTYOUT){
-				flag = false;
-			}
-		}
-		floorMap[tx][ty] = WALL;
-		Enemy te;
-		te.init(getRand(0,1),1);
-		te.x = tx, te.y = ty;
-		enemyList.push_back(te);
-		i++;
-	}
-	for(int i = 0; i < enemyList.size() ; i++){
-		floorMap[enemyList[i].x][enemyList[i].y] = EMPTYOUT;
-	}
-}*/
-
-void FloorMap::genMap(int rooms){
+void FloorMap::genMap(Graphics &graphics,int rooms){
 	free();
-	mWidth = WIDTH;
-	mHeight = HEIGHT;
+	mWidth = WIDTH; mHeight = HEIGHT;
 	fillBlock(0,0,mWidth,mHeight,WALL);
 	roomList = new Room[rooms];
-	bool flag;
-	troom = 0;
-	int k = 0;
+	bool flag; troom = 0; int k = 0;
 	
 	for(int i = 0; i < rooms && k < 1000;){
 		Room tempRoom;
@@ -350,10 +65,8 @@ void FloorMap::genMap(int rooms){
 			}
 		}
 		if(flag){
-			roomList[i] = tempRoom;
-			i++;
-			troom++;
-			k = 0;
+			roomList[i++] = tempRoom;
+			troom++; k = 0;
 		}
 	}
 	
@@ -387,7 +100,15 @@ void FloorMap::genMap(int rooms){
 		floorMap[mapList[i][0]][mapList[i][1]] = CHESTOUT;
 	}
 	setBorders();
-	//addEnemies();
+	addEnemies(graphics);
+}
+
+int FloorMap::getChestNo(){
+	return 6;
+}
+
+int FloorMap::getBlock(int x, int y){
+	return floorMap[x][y];
 }
 
 int FloorMap::getWidth(){
@@ -397,85 +118,365 @@ int FloorMap::getWidth(){
 int FloorMap::getHeight(){
 	return mHeight;
 }
-/*
-void FloorMap::handleEvent(SDL_Event e){
-	if(e.type == SDL_KEYDOWN && e.key.repeat == 0){
-		switch(e.key.keysym.sym){
-			case SDLK_w:case SDLK_a:case SDLK_s:case SDLK_d:case SDLK_LEFT:case SDLK_RIGHT:case SDLK_UP:case SDLK_DOWN:
-				currentKey = e.key.keysym.sym;
-				nextMoveFrame = 0;
+
+Vector2 FloorMap::getPlayerPos(){
+	return playerPos;
+}
+
+bool FloorMap::inbounds(int px, int py){
+	if(py < mWidth && px >=0 && px < mHeight && py >=0){
+		return true;
+	}
+	return false;
+}
+
+Vector2 FloorMap::putPlayer(){
+	int rno = getRand(0,troom-1);
+	bool flag = true;
+	int tx = roomList[rno].y+roomList[rno].h/2;
+	int ty = roomList[rno].x+roomList[rno].w/2;
+	while(flag){
+		tx = getRand(roomList[rno].y+1,roomList[rno].y+roomList[rno].h-1);
+		ty = getRand(roomList[rno].x+1,roomList[rno].x+roomList[rno].w-1);
+		if(isFree(tx,ty)){
+			flag = false;
 		}
 	}
-	else if(e.type == SDL_KEYUP && e.key.repeat == 0){
-		switch(e.key.keysym.sym){
-			case SDLK_w:case SDLK_a:case SDLK_s:case SDLK_d:case SDLK_LEFT:case SDLK_RIGHT:case SDLK_UP:case SDLK_DOWN:
-				if(currentKey == e.key.keysym.sym){
-					currentKey = 0;
-					nextMoveFrame = -1;
-				}
+	playerPos = Vector2(tx,ty);
+	return getPlayerPos();
+}
+
+void FloorMap::setSprites(){
+	SDL_Rect r = {0,0,100,100};
+	tileClip.push_back(r);
+	tileClip.push_back(r);
+	SDL_Rect r2 = {100,0,100,100};
+	tileClip.push_back(r2);
+	tileClip.push_back(r);
+	SDL_Rect r4 = {200,0,100,100};
+	tileClip.push_back(r4);
+	SDL_Rect r5 = {400,0,100,100};
+	tileClip.push_back(r5);
+	SDL_Rect r6 = {500,0,100,100};
+	tileClip.push_back(r6);
+	tileClip.push_back(r);
+	tileClip.push_back(r);
+	SDL_Rect r9 = {0,100,100,100};
+	tileClip.push_back(r9);
+}
+
+void FloorMap::drawMap(Graphics &graphics){
+	int ts = global::TILE_SIZE;
+	for(int i = 0; i < mHeight; i++){
+		for(int j = 0; j < mWidth ; j++){
+			SDL_Rect destRect = {j*ts,i*ts,ts,ts};
+			graphics.blitSurface(this->blockSprites,getSpriteRect(floorMap[i][j]),
+									&destRect);
 		}
 	}
 }
 
-bool FloorMap::handleMove(){
+void FloorMap::drawViewCone(Graphics &graphics){
+	int ts = global::TILE_SIZE;
+	std::queue<int> q1,q2,q3;
+	q1.push(playerPos.x);q2.push(playerPos.y);q3.push(VIEWSIZE);
+	bool visited[mHeight][mWidth];
+	for(int i = 0; i < mHeight ; i++){
+		for(int j = 0; j < mWidth ; j++){
+			visited[i][j] = false;
+		}
+	}
+	visited[playerPos.x][playerPos.y] = true;
+	while(!q1.empty()){
+		int t1 = q1.front(),t2 = q2.front(), t3 = q3.front();
+		q1.pop();q2.pop();q3.pop();
+		if(t3-1 && !visited[t1-1][t2] && floorMap[t1-1][t2]!=WALL && floorMap[t1-1][t2]!=WALLEDGE){
+			q1.push(t1-1);q2.push(t2);q3.push(t3-1);visited[t1-1][t2] = true;
+		}
+		if(t3-1 && !visited[t1+1][t2] && floorMap[t1+1][t2]!=WALL&& floorMap[t1+1][t2]!=WALLEDGE){
+			q1.push(t1+1);q2.push(t2);q3.push(t3-1);visited[t1+1][t2] = true;
+		}
+		if(t3-1 && !visited[t1][t2+1] && floorMap[t1][t2+1]!=WALL && floorMap[t1][t2+1]!=WALLEDGE){
+			q1.push(t1);q2.push(t2+1);q3.push(t3-1);visited[t1][t2+1] = true;
+		}
+		if(t3-1 && !visited[t1][t2-1] && floorMap[t1][t2-1]!=WALL && floorMap[t1][t2-1]!=WALLEDGE){
+			q1.push(t1);q2.push(t2-1);q3.push(t3-1);visited[t1][t2-1] = true;
+		}
+		SDL_Rect destRect = {t2*ts,t1*ts,ts,ts};
+		graphics.blitSurface(this->blockSprites,
+								getSpriteRect(highlight(floorMap[t1][t2])),&destRect);
+	}
+}
+
+void FloorMap::drawEnemy(Graphics &graphics){
+	for(int i = 0 ; i < enemyList.size(); i++){
+		if(enemyList[i].visible)
+			enemyList[i].draw(graphics);
+	}
+}
+
+void FloorMap::setPlayerPos(Vector2 ppos){
+	playerPos = ppos;
+}
+
+SDL_Rect* FloorMap::getSpriteRect(int sprite){
+	return &tileClip[sprite];
+}
+
+void FloorMap::updateView(){
+	std::queue<int> q1,q2,q3;
+	q1.push(playerPos.x);q2.push(playerPos.y);q3.push(VIEWSIZE);
+	bool visited[mHeight][mWidth];
+	for(int i = 0; i < mHeight ; i++){
+		for(int j = 0; j < mWidth ; j++){
+			visited[i][j] = false;
+		}
+	}
+	setEnemyInvisible();
+	visited[playerPos.x][playerPos.y] = true;
+	while(!q1.empty()){
+		int t1 = q1.front(),t2 = q2.front(), t3 = q3.front();
+		q1.pop();q2.pop();q3.pop();
+		if(t3-1 && !visited[t1-1][t2] && floorMap[t1-1][t2]!=WALL && floorMap[t1-1][t2]!=WALLEDGE){
+			q1.push(t1-1);q2.push(t2);q3.push(t3-1);visited[t1-1][t2] = true;
+		}
+		else if(floorMap[t1-1][t2]==WALLEDGE){
+			convert(t1-1,t2);
+		}
+		if(t3-1 && !visited[t1+1][t2] && floorMap[t1+1][t2]!=WALL&& floorMap[t1+1][t2]!=WALLEDGE){
+			q1.push(t1+1);q2.push(t2);q3.push(t3-1);visited[t1+1][t2] = true;
+		}
+		else if(floorMap[t1+1][t2]==WALLEDGE){
+			convert(t1+1,t2);
+		}
+		if(t3-1 && !visited[t1][t2+1] && floorMap[t1][t2+1]!=WALL && floorMap[t1][t2+1]!=WALLEDGE){
+			q1.push(t1);q2.push(t2+1);q3.push(t3-1);visited[t1][t2+1] = true;
+		}
+		else if(floorMap[t1-1][t2+1]==WALLEDGE){
+			convert(t1,t2+1);
+		}
+		if(t3-1 && !visited[t1][t2-1] && floorMap[t1][t2-1]!=WALL && floorMap[t1][t2-1]!=WALLEDGE){
+			q1.push(t1);q2.push(t2-1);q3.push(t3-1);visited[t1][t2-1] = true;
+		}
+		else if(floorMap[t1][t2-1]==WALLEDGE){
+			convert(t1,t2-1);
+		}
+		convert(t1,t2);
+		checkEnemy(t1,t2);
+	}
+}
+
+void FloorMap::handleMove(Player &player, Logger &log, SDL_Keycode key, int currentFrame){
+	setPlayerPos(player.getPosition());
+	//printf("CurrentFrame : %d\n",currentFrame);
+	if(currentEnemyProcess == -1 && currentFrame == 0){
+		bool ret = false;
+		switch(key){
+			case SDLK_w:case SDLK_UP:
+				ret = movePlayer(log,UP,player);
+				//printf("UP\n");
+				break;
+			case SDLK_a:case SDLK_LEFT:
+				ret = movePlayer(log,LEFT,player);
+				//printf("LEFT\n");
+				break;
+			case SDLK_s:case SDLK_DOWN:
+				ret = movePlayer(log,DOWN,player);
+				//printf("DOWN\n");
+				break;
+			case SDLK_d:case SDLK_RIGHT:
+				ret = movePlayer(log,RIGHT,player);
+				//printf("RIGHT\n");
+				break;
+		}
+		if(ret){
+			currentEnemyProcess = 0;
+			//printf("Enemies Turn\n");
+		}
+	}
+	else if(currentEnemyProcess != -1 && currentFrame <= 0){
+		//printf("Moving Enemies\n");
+		moveEnemies(log,player);
+	}
+}
+
+int FloorMap::highlight(int tiletype){
+	switch(tiletype){
+		case EMPTYSEEN:return EMPTYBRIGHT;
+		default: return tiletype;
+	}
+}
+
+bool FloorMap::movePlayer(Logger &log, int direction, Player &player){
 	bool ret = false;
-	switch(currentKey){
-		case SDLK_w:
-		case SDLK_UP:
-			ret = movePlayer(UP);
+	int t = -1,posx = playerPos.x, posy = playerPos.y;
+	switch(direction){
+		case UP:
+			posx--;break;
+		case LEFT:
+			posy--;break;
+		case DOWN:
+			posx++;break;
+		case RIGHT:
+			posy++;break;
+	}
+	if( isFree(posx,posy) ){
+		playerPos = Vector2(posx,posy);
+		player.x = posx;
+		player.y = posy;
+		ret = true;
+	}
+	else if( t = isEnemy(posx,posy) ){
+		ret = true;
+		attackEnemy(player,log,t);
+	}
+	updateView();
+	return ret;
+}
+
+void FloorMap::fillBlock(int x, int y, int width, int height,int block_type){
+	for(int i = 0 ; i < height ; i++){
+		for(int j = 0; j < width; j++){
+			floorMap[y+i][x+j] = block_type;
+		}
+	}
+}
+
+void FloorMap::fillBlock(Room room, int block_type){
+	fillBlock(room.x,room.y,room.w,room.h,block_type);
+}
+
+void FloorMap::makePath(int sx, int sy, int ex, int ey){
+	if(getRand(0,1)){
+		if(sx > ex){
+			swap(sx,ex);
+			swap(sy,ey);
+		}
+		int tt = 1;
+		fillBlock(sx,sy,ex-sx+1,tt);
+		fillBlock(ex,min(ey,sy),tt,max(ey,sy)-min(ey,sy));
+	}
+	else{
+		if(sy > ey){
+			swap(sx,ex);
+			swap(sy,ey);
+		}
+		int tt = 1;
+		fillBlock(sx,sy,tt,ey-sy+1);
+		fillBlock(min(ex,sx),ey,max(ex,sx)-min(ex,sx),tt);
+	}
+}
+
+bool FloorMap::emptyNeighbour(int x, int y){
+	if( floorMap[x][y] == EMPTYOUT && floorMap[x-1][y] == EMPTYOUT && 
+			floorMap[x+1][y] == EMPTYOUT && floorMap[x][y+1] == EMPTYOUT && 
+			floorMap[x][y-1] == EMPTYOUT){
+		floorMap[x][y] = CHESTOUT;
+		return true;
+	}
+	return false;
+}
+
+void FloorMap::convert(int px, int py){
+	switch(floorMap[px][py]){
+		case EMPTYOUT:
+			floorMap[px][py] = EMPTYSEEN;
 			break;
-		case SDLK_a:
-		case SDLK_LEFT:
-			ret = movePlayer(LEFT);
+		case CHESTOUT:
+			floorMap[px][py] = CHESTCLOSED;
 			break;
-		case SDLK_s:
-		case SDLK_DOWN:
-			ret = movePlayer(DOWN);
-			break;
-		case SDLK_d:
-		case SDLK_RIGHT:
-			ret = movePlayer(RIGHT);
+		case WALLEDGEOUT:
+			floorMap[px][py] = WALLEDGE;
 			break;
 	}
 }
 
-int FloorMap::getDisttoPlayer(Enemy e){
-	float d[5];
-	d[0] = isFree(e.x-1,e.y)? dist(e.x-1,e.y,playerX,playerY) : MAX_DIST;
-	d[1] = isFree(e.x+1,e.y)? dist(e.x+1,e.y,playerX,playerY) : MAX_DIST;
-	d[2] = isFree(e.x,e.y-1)? dist(e.x,e.y-1,playerX,playerY) : MAX_DIST;
-	d[3] = isFree(e.x,e.y+1)? dist(e.x,e.y+1,playerX,playerY) : MAX_DIST;
-	d[4] = dist(e.x,e.y,playerX,playerY) + 0.8;
-	return min(d,5);
+void FloorMap::setBorders(){
+	for(int i = 1 ; i < mHeight-1 ; i++){
+		for(int j = 1 ; j < mWidth-1 ; j++){
+			if(floorMap[i][j] == WALL && (floorMap[i-1][j]==EMPTYOUT||floorMap[i+1][j]==EMPTYOUT||floorMap[i][j+1]==EMPTYOUT||floorMap[i][j-1]==EMPTYOUT)){
+				floorMap[i][j] = WALLEDGEOUT;
+			}
+		}
+	}
 }
 
-bool FloorMap::moveEnemies(){
+bool FloorMap::joinRoom(int a, int b){
+	if(a==b){
+		return false;
+	}
+	int startx = roomList[a].x + getRand(3,roomList[a].w-3),
+		starty = roomList[a].y + getRand(3,roomList[a].h-3),
+		endx = roomList[b].x + getRand(3,roomList[b].w-3),
+		endy = roomList[b].y + getRand(3,roomList[b].h-3);
+	makePath(startx,starty,endx,endy);
+	return true;
+}
+
+void FloorMap::checkEnemy(int x,int y){
+	for(int i = 0; i < enemyList.size(); i++){
+		if(enemyList[i].x == x && enemyList[i].y == y){
+			enemyList[i].setVisible();
+		}
+	}
+}
+
+void FloorMap::setEnemyInvisible(){
+	for(int i = 0; i < enemyList.size(); i++){
+		enemyList[i].setInvisible();
+	}
+}
+
+int FloorMap::getEnemyLevel(){
+	return getRand(1,2);
+}
+
+int FloorMap::getEnemyType(){
+	return getRand(0,1);
+}
+
+void FloorMap::addEnemies(Graphics &graphics){
+	for(int i = 0; i < MAX_ENEMY_NO ; ){
+		int rno = getRand(0,troom-1),tx,ty;
+		bool flag = true;
+		while(flag){
+			tx = getRand(roomList[rno].y+1,roomList[rno].y+roomList[rno].h-1);
+			ty = getRand(roomList[rno].x+1,roomList[rno].x+roomList[rno].w-1);
+			if(floorMap[tx][ty] == EMPTYOUT){
+				flag = false;
+			}
+		}
+		floorMap[tx][ty] = WALL;
+		Enemy te;
+		te.init(graphics,getRand(0,1),1);
+		te.x = tx, te.y = ty;
+		enemyList.push_back(te);
+		i++;
+	}
+	for(int i = 0; i < enemyList.size() ; i++){
+		floorMap[enemyList[i].x][enemyList[i].y] = EMPTYOUT;
+	}
+}
+
+void FloorMap::moveEnemies(Logger &log, Player &player){
 	if(currentEnemyProcess==0){
 		for(int i = 0; i < enemyList.size(); i++){
 			enemyList[i].moved = false;
 		}
 	}
-	
+	currentEnemyProcess = 1;
 	for(int i = 0; i < enemyList.size(); i++){
 		if(enemyList[i].moved)
 			continue;
-		if(isAdj(enemyList[i].x,enemyList[i].y,playerX,playerY)){
-			//log.logAttack(enemyList[i].name,player.pName);
+		if(isAdj(enemyList[i].x,enemyList[i].y,player.x,player.y)){
 			int temp = damageCalc(player,enemyList[i]);
 			if(temp)
 				log.logDamage(enemyList[i].name,player.pName,temp);
 			else
 				log.logMiss(enemyList[i].name);
 			player.getHit(temp);
-			currentKey = 0;
 			enemyList[i].moved = true;
-			//log.logLine();
-			if(currentEnemyProcess == 1 && haltFor(ATTACKDELAY))
-				return true;
-			else{
-				currentEnemyProcess = 1;
-				return false;
-			}
+			return;
 		}
 		else if(enemyList[i].visible){
 			int dir = getDisttoPlayer(enemyList[i]);
@@ -509,37 +510,9 @@ bool FloorMap::moveEnemies(){
 		}
 	}
 	currentEnemyProcess = -1;
-	return false;
+	//printf("Moved Enemies\n");
 }
 
-bool FloorMap::frameDone(){
-	if(nextMoveFrame!=-1){
-		if(!nextMoveFrame && currentEnemyProcess == -1){
-			bool t = handleMove();
-			if(t){
-				currentEnemyProcess = 0;
-			}
-			newData = true;
-		}
-		nextMoveFrame = (nextMoveFrame+1)%FRAME_PER_MOVE;
-	}
-	if(currentEnemyProcess!=-1){
-		newData = true;
-		nextMoveFrame = (nextMoveFrame+1)%FRAME_PER_MOVE;
-		return moveEnemies();
-	}
-	return false;
-}*/
-
-void FloorMap::free(){
-	if(roomList!=NULL)
-		delete[] roomList;
-	enemyList.erase(enemyList.begin(),enemyList.end());
-}
-
-void FloorMap::renderDone(){
-	newData = false;
-}
 
 bool FloorMap::isFree(int x, int y){
 	if(floorMap[x][y] == EMPTYOUT || floorMap[x][y] == EMPTYSEEN){
@@ -574,3 +547,48 @@ int FloorMap::damageCalc(Actor a, Actor b){
 	else
 		return 0;
 }
+
+
+void FloorMap::attackEnemy(Player &player, Logger &log, int eno){
+	eno-=1;
+	int t = damageCalc(enemyList[eno],player);
+	if(t)
+		log.logDamage(player.pName,enemyList[eno].name,t);
+	else
+		log.logMiss(player.pName);
+	if(enemyList[eno].getHit(t)){
+		log.logKilled(enemyList[eno].name);
+		enemyList.erase(enemyList.begin()+eno);
+	}
+}
+
+int FloorMap::getDisttoPlayer(Enemy e){
+	float d[5];
+	int playerX = playerPos.x, playerY = playerPos.y;
+	d[0] = isFree(e.x-1,e.y)? dist(e.x-1,e.y,playerX,playerY) : MAX_DIST;
+	d[1] = isFree(e.x+1,e.y)? dist(e.x+1,e.y,playerX,playerY) : MAX_DIST;
+	d[2] = isFree(e.x,e.y-1)? dist(e.x,e.y-1,playerX,playerY) : MAX_DIST;
+	d[3] = isFree(e.x,e.y+1)? dist(e.x,e.y+1,playerX,playerY) : MAX_DIST;
+	d[4] = dist(e.x,e.y,playerX,playerY) + 0.8;
+	return min(d,5);
+}
+
+/*
+bool FloorMap::frameDone(){
+	if(nextMoveFrame!=-1){
+		if(!nextMoveFrame && currentEnemyProcess == -1){
+			bool t = handleMove();
+			if(t){
+				currentEnemyProcess = 0;
+			}
+			newData = true;
+		}
+		nextMoveFrame = (nextMoveFrame+1)%FRAME_PER_MOVE;
+	}
+	if(currentEnemyProcess!=-1){
+		newData = true;
+		nextMoveFrame = (nextMoveFrame+1)%FRAME_PER_MOVE;
+		return moveEnemies();
+	}
+	return false;
+}*/

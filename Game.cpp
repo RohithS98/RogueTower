@@ -1,4 +1,3 @@
-#include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
@@ -24,11 +23,16 @@ void Game::gameLoop(){
 	Graphics graphics;
 	SDL_Event e;
 	
+	log.clearLog();
 	fmap = FloorMap(graphics);
-	fmap.setFloor(1);
-	fmap.genMap(MAX_ROOMS);
+	fmap.setFloor(log,1);
+	fmap.genMap(graphics);
 	Vector2 playPos = fmap.putPlayer();
-	int x = 0, y = 20;
+	player.init(graphics);
+	player.setPosition(playPos);
+	fmap.updateView();
+	currentKey = 0;
+	currentFrame = -1;
 	
 	float LAST_UPDATE;
 	while(true){
@@ -38,12 +42,55 @@ void Game::gameLoop(){
 			if( e.type == SDL_QUIT ){
 				return ;
 			}
+			if( e.type == SDL_KEYDOWN && e.key.repeat == 0 ){
+				switch(e.key.keysym.sym){
+					case SDLK_w:case SDLK_a:case SDLK_s:case SDLK_d:case SDLK_UP:
+					case SDLK_LEFT:case SDLK_DOWN:case SDLK_RIGHT:
+						currentKey = e.key.keysym.sym;
+						currentFrame = 0;
+				}
+			}
+			else if( e.type == SDL_KEYUP ){
+				if(currentKey == e.key.keysym.sym){
+					currentKey = 0;
+					currentFrame = -1;
+				}
+			}
 		}
-		fmap.render(graphics);
-		graphics.flip();
+		
+		this->update(currentKey,currentFrame);
+		if(currentFrame >= 0){
+			currentFrame = (currentFrame+1)%FRAME_PER_MOVE;
+		}
+		if( fmap.currentEnemyProcess == 1 ){
+			printf("T");
+			currentKey = 0;
+			currentFrame = -1;
+		}
+		
+		draw(graphics);
+		
 		float CURRENT_TIME = SDL_GetTicks();
 		if(CURRENT_TIME - LAST_UPDATE < FRAME_TIME){
 			SDL_Delay(FRAME_TIME - CURRENT_TIME + LAST_UPDATE);
 		}
 	}
+}
+
+void Game::draw(Graphics &graphics){
+	graphics.setViewPort(GAME_VIEWPORT);
+	fmap.drawMap(graphics);
+	fmap.drawViewCone(graphics);
+	fmap.drawEnemy(graphics);
+	player.draw(graphics);
+	graphics.setViewPort(LOG_VIEWPORT);
+	log.render(graphics);
+	//graphics.setViewPort(STAT_VIEWPORT);
+	//player.renderStats(graphics);
+	graphics.flip();
+}
+
+void Game::update(SDL_Keycode key, int currentFrame){
+	fmap.handleMove(player,log,key,currentFrame);
+	player.setPosition(fmap.getPlayerPos());
 }

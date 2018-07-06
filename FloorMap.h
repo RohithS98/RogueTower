@@ -10,9 +10,6 @@
 #include "Logger.h"
 #include "Utils.h"
 
-const int FRAME_PER_MOVE = 7;
-const int ATTACKDELAY = 300;
-
 enum BLOCK_TYPE{
 	WALL = 0,
 	EMPTYOUT = 1,
@@ -33,7 +30,9 @@ namespace {
 	const int MIN_ROOM_SIZE = 7;
 	const int MAX_ROOM_SIZE = 10;
 	const std::string blockSpriteLoc = "resources/blocksprite2.png";
-	const int TILE_SIZE = 15;
+	const int MAXROOMNO = 10;
+	const int MAX_ENEMY_NO = 10;
+	const int VIEWSIZE = 8;
 }
 
 enum DIRECTION{
@@ -56,8 +55,8 @@ class FloorMap{
 	FloorMap(Graphics &graphics);
 	~FloorMap();
 	void free();
-	void setFloor(int floorNo);
-	void genMap(int rooms = 5);
+	void setFloor(Logger &log, int floorNo);
+	void genMap(Graphics &graphics,int rooms = MAXROOMNO);
 	int getChestNo();
 	int getBlock(int x, int y);
 	int getHeight();
@@ -66,22 +65,23 @@ class FloorMap{
 	bool inbounds(int,int);
 	Vector2 putPlayer();
 	void setSprites();
-	void render(Graphics &graphics);
+	void drawMap(Graphics &graphics);
+	void drawViewCone(Graphics &graphics);
+	void drawEnemy(Graphics &graphics);
+	void setPlayerPos(Vector2 ppos);
 	SDL_Rect* getSpriteRect(int sprite);
+	void updateView();	
+	void handleMove(Player &player, Logger &log, SDL_Keycode key, int currentFrame);
 	
-	void updateView(int x, int y);	
-	//void handleEvent(SDL_Event);	
-	//bool frameDone();	
-	bool newData;	
-	void renderDone();	
-	int VIEWSIZE;
 	Vector2 playerPos;	
-	vector<Enemy> enemyList;	
-	int floorNo;
+	std::vector<Enemy> enemyList;	
+	int floorNo, currentEnemyProcess;
 	Logger log;	
 	
 	private:
 	
+	int highlight(int);
+	bool movePlayer(Logger &log, int dir, Player &player);
 	void fillBlock(int x, int y, int width, int height,int block_type = EMPTYOUT);
 	void fillBlock(Room room, int block_type);
 	void makePath(int a, int b, int c, int d);
@@ -91,20 +91,20 @@ class FloorMap{
 	bool joinRoom(int,int);
 	void checkEnemy(int,int);
 	void setEnemyInvisible();
-	//void addEnemies(int);
-	//bool moveEnemies();
-	//bool handleMove();
-	//bool movePlayer(int dir);
+	int getEnemyLevel();
+	int getEnemyType();
+	void addEnemies(Graphics &graphics);
+	void moveEnemies(Logger &log, Player &player);
 	bool isFree(int x, int y);
 	int isEnemy(int,int);
 	int damageCalc(Actor a, Actor b);
-	//void attackEnemy(int);
-	//int getDisttoPlayer(Enemy e);
-	int floorMap[HEIGHT][WIDTH], mWidth, mHeight, playerX, playerY, troom, nextMove, nextMoveFrame,currentEnemyProcess;
+	void attackEnemy(Player &player, Logger &log, int eno);
+	int getDisttoPlayer(Enemy e);
+	int floorMap[HEIGHT][WIDTH], mWidth, mHeight, troom;
 	Room *roomList;
 	//SDL_Keycode currentKey;	
 	SDL_Texture* blockSprites;
-	vector<SDL_Rect> tileClip;
+	std::vector<SDL_Rect> tileClip;
 };
 
 #endif

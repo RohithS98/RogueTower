@@ -7,6 +7,7 @@
 #include <math.h>
 #include <sstream>
 #include "Graphics.h"
+#include "Utils.h"
 
 class Graphics;
 
@@ -18,12 +19,17 @@ enum ENEMYTYPE{
 	ETYPE2 = 1,
 };
 
+namespace PlayerConst{
+	const std::string fontName = "resources/VT323-Regular.ttf";
+	const int size = 24;
+}
+
 class Actor{
 	public:
 	int health,speed,def,atk,x,y,level,maxhealth,acc,luck;
 	void setSprite(Graphics &graphics, const std::string &filePath, int sourceX,
 					int sourceY, int width, int height);
-	void draw(Graphics &graphics, int x, int y, int mw, int mh);
+	void draw(Graphics &graphics);
 	protected:
 	SDL_Rect sourceRect;
 	SDL_Texture* spriteSheet;
@@ -32,6 +38,8 @@ class Actor{
 class Player : public Actor{
 	public:
 	void init(Graphics &graphics, int type = 0,std::string name = "LOL");
+	void setPosition(Vector2 vec);
+	Vector2 getPosition();
 	bool gainXP(int);
 	void boostAttack(int);
 	void boostDefense(int);
@@ -40,6 +48,7 @@ class Player : public Actor{
 	void boostLuck(int);
 	void boostAccuracy(int);
 	bool getHit(int);
+	void renderStat(Graphics &graphics);
 	std::string getHealthStr();
 	std::string pName;
 	int xp,nextxp;

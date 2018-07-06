@@ -1,5 +1,4 @@
 #include "Actors.h"
-#include "Utils.h"
 
 using namespace std;
 
@@ -9,12 +8,13 @@ void Actor::setSprite(Graphics &graphics, const std::string &filePath, int sourc
 	sourceRect.y = sourceY;
 	sourceRect.w = width;
 	sourceRect.h = height;
-	
-	spriteSheet = SDL_CreateTextureFromSurface(graphics.getRenderer(), graphics.loadImage(filePath));
+	spriteSheet = SDL_CreateTextureFromSurface(graphics.getRenderer(),
+												graphics.loadImage(filePath));
 }
 
-void Actor::draw(Graphics &graphics, int x, int y, int mw, int mh){
-	SDL_Rect destRect = {x,y,mw,mh};
+void Actor::draw(Graphics &graphics){
+	SDL_Rect destRect = {y*global::TILE_SIZE,x*global::TILE_SIZE,global::TILE_SIZE,
+							global::TILE_SIZE};
 	graphics.blitSurface( spriteSheet, &sourceRect, &destRect );
 }
 
@@ -67,6 +67,20 @@ bool Player::gainXP(int exp){
 	}
 	return false;
 }
+/*
+void Player::renderStat(Graphics &graphics){
+	TTF_Font* gFont = graphics.loadFont(Player::fontName,Player::size);
+	SDL_Rect bounds = {0,0,210,220};
+	graphics.drawRect(bounds,0xBB,0xBB,0xBB);
+	for(int i = 0; i < logMessages.size(); i++){
+		SDL_Surface* textSurf = TTF_RenderText_Solid( gFont, logMessages[i].c_str(),
+														Log::logColor);
+		SDL_Rect source = {0, 0, textSurf->w, textSurf->h};
+		SDL_Rect dest = {5, 160 + 15*(i-logMessages.size()), textSurf->w, textSurf->h};
+		graphics.blitSurface(SDL_CreateTextureFromSurface(graphics.getRenderer() , 																textSurf),&source,&dest);
+		SDL_FreeSurface( textSurf );
+	}
+}*/
 
 void Player::init(Graphics &graphics, int type,string name){
 	setSprite(graphics,"resources/blocksprite2.png",300,0,100,100);
@@ -84,6 +98,15 @@ void Player::init(Graphics &graphics, int type,string name){
 	xp = 0;
 	nextxp = getXP();
 }	
+
+void Player::setPosition(Vector2 vec){
+	x = vec.x;
+	y = vec.y;
+}
+
+Vector2 Player::getPosition(){
+	return Vector2(x,y);
+}
 
 string Player::getHealthStr(){
 	stringstream s1;

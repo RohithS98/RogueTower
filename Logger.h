@@ -4,22 +4,30 @@
 #include <string>
 #include <deque>
 #include <sstream>
-using namespace std;
+#include "Graphics.h"
 
-const int MAXLOGMESSAGES = 10;
+struct SDL_Color;
+
+namespace Log{
+	const int MAXLOGMESSAGES = 10;
+	const std::string fontName = "resources/Raleway-Medium.ttf";
+	const int size = 12;
+	const SDL_Color logColor = {0xFF,0xFF,0xFF,0xFF};
+}
 
 class Logger{
 	public:
-	void logAttack(string,string);
-	void logDamage(string,string,int);
-	void logKilled(string);
+	void logAttack(std::string,std::string);
+	void logDamage(std::string,std::string,int);
+	void logKilled(std::string);
 	void logNewFloor(int);
 	void clearLog();
 	void logLine();
-	void logMiss(string);
-	deque<string> logMessages;
+	void logMiss(std::string);
+	std::deque<std::string> logMessages;
+	void render(Graphics &graphics);
 	private:
-	void logAdd(string);
+	void logAdd(std::string);
 };
 
 #endif

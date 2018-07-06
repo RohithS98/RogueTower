@@ -22,9 +22,12 @@ class Graphics{
 	~Graphics();
 	SDL_Surface* loadImage(const std::string &filePath);
 	TTF_Font* loadFont(const std::string &filePath, int size);
+	void blitText(TTF_Font* gFont,const std::string text, SDL_Color col, int x, int y);
+	void blitTextCenterX(TTF_Font* gFont,const std::string text, SDL_Color col, int x, int y, int xoff = 0);
 	void blitSurface(SDL_Texture* source, SDL_Rect* sourceRect, SDL_Rect* destRect);
 	void setViewPort(SDL_Rect rect);
 	void defaultViewPort();
+	void drawRect(SDL_Rect rect, int r, int g, int b);
 	void flip();
 	void clear();
 	SDL_Renderer* getRenderer() const;
