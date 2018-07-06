@@ -21,11 +21,15 @@ enum BLOCK_TYPE{
 	EMPTYBRIGHT = 5,
 	WALLEDGEOUT = 7,
 	WALLEDGE = 6,
+	STAIROUT = 8,
+	STAIR = 9,
 };
 
-const int WIDTH = 66;
-const int HEIGHT = 46;
-const int MAX_DIST = 90;
+namespace {
+	const int WIDTH = 66;
+	const int HEIGHT = 46;
+	const int MAX_DIST = 90;
+}
 
 enum DIRECTION{
 	UP = 0,
@@ -44,10 +48,11 @@ class FloorMap{
 	
 	public:
 	
-	FloorMap(string,int type = 0);
+	FloorMap();
 	
 	void free();
-	void genMap(int rooms = 5, int enemies = 5, int chestNo = 5);
+	void setFloor(int floorNo);
+	void genMap(int rooms = 5);
 	int getBlock(int x, int y);
 	int getHeight();
 	int getWidth();
@@ -87,7 +92,7 @@ class FloorMap{
 	void attackEnemy(int);
 	int getDisttoPlayer(Enemy e);
 	int MIN_ROOM_SIZE, MAX_ROOM_SIZE;
-	int floorMap[HEIGHT][WIDTH], mWidth, mHeight, playerX, playerY, troom, nextMove, nextMoveFrame,currentEnemyProcess;
+	int floorMap[HEIGHT][WIDTH], mWidth, mHeight, playerX, playerY, troom, nextMove, nextMoveFrame,currentEnemyProcess, floor;
 	Room *roomList;
 	SDL_Keycode currentKey;
 	bool haltFor(int);

@@ -6,7 +6,10 @@
 #include <time.h>
 #include <math.h>
 #include <sstream>
-using namespace std;
+#include "Graphics.h"
+
+class Graphics;
+
 
 int getRand(int,int);
 
@@ -17,13 +20,18 @@ enum ENEMYTYPE{
 
 class Actor{
 	public:
-	
 	int health,speed,def,atk,x,y,level,maxhealth,acc,luck;
+	void setSprite(Graphics &graphics, const std::string &filePath, int sourceX,
+					int sourceY, int width, int height);
+	void draw(Graphics &graphics, int x, int y);
+	protected:
+	SDL_Rect sourceRect;
+	SDL_Texture* spriteSheet;
 };
 
 class Player : public Actor{
 	public:
-	void init(int type = 0,string name = "LOL");
+	void init(Graphics &graphics, int type = 0,std::string name = "LOL");
 	bool gainXP(int);
 	void boostAttack(int);
 	void boostDefense(int);
@@ -32,8 +40,8 @@ class Player : public Actor{
 	void boostLuck(int);
 	void boostAccuracy(int);
 	bool getHit(int);
-	string getHealthStr();
-	string pName;
+	std::string getHealthStr();
+	std::string pName;
 	int xp,nextxp;
 	private:
 	int getXP();
@@ -42,11 +50,11 @@ class Player : public Actor{
 
 class Enemy : public Actor{
 	public:
-	void init(int type,int level);
+	void init(Graphics &graphics, int type, int level);
 	int getType();
 	bool getHit(int);
 	int type;
-	string name;
+	std::string name;
 	bool visible,moved;
 	void setVisible();
 	void setInvisible();

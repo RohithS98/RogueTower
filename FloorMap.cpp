@@ -1,9 +1,9 @@
 #include "FloorMap.h"
 #include "Utils.h"
 
-FloorMap::FloorMap(string pname,int t){
-	int seed = 1530335882;
-	//int seed = time(NULL);
+FloorMap::FloorMap(){
+	//int seed = 1530335882;
+	int seed = time(NULL);
 	printf("Seed:%d\n",seed);
 	srand(seed);
 	MIN_ROOM_SIZE = 7;
@@ -11,9 +11,6 @@ FloorMap::FloorMap(string pname,int t){
 	VIEWSIZE = 10;
 	roomList = NULL;
 	newData = false;
-	currentKey = 0;
-	nextMoveFrame = -1;
-	player.init(t,pname);
 	floorNo = 1;
 	currentEnemyProcess = -1;
 }
@@ -55,7 +52,7 @@ int FloorMap::getPlayerY(){
 void FloorMap::attackEnemy(int eno){
 	currentKey = 0;
 	eno-=1;
-	log.logAttack(player.pName,enemyList[eno].name);
+	//log.logAttack(player.pName,enemyList[eno].name);
 	int t = damageCalc(enemyList[eno],player);
 	if(t)
 		log.logDamage(player.pName,enemyList[eno].name,t);
@@ -65,7 +62,7 @@ void FloorMap::attackEnemy(int eno){
 		log.logKilled(enemyList[eno].name);
 		enemyList.erase(enemyList.begin()+eno);
 	}
-	log.logLine();
+	//log.logLine();
 }
 
 bool FloorMap::movePlayer(int direction){
@@ -267,7 +264,7 @@ void FloorMap::addEnemies(int e){
 		while(flag){
 			tx = getRand(roomList[rno].y+1,roomList[rno].y+roomList[rno].h-1);
 			ty = getRand(roomList[rno].x+1,roomList[rno].x+roomList[rno].w-1);
-			if(floorMap[tx][ty] == EMPTYOUT && (playerX!=tx || playerY!=ty)){
+			if(floorMap[tx][ty] == EMPTYOUT){
 				flag = false;
 			}
 		}
@@ -283,7 +280,7 @@ void FloorMap::addEnemies(int e){
 	}
 }
 
-void FloorMap::genMap(int rooms, int enemies, int chestNo){
+void FloorMap::genMap(int rooms){
 	free();
 	mWidth = WIDTH;
 	mHeight = HEIGHT;
@@ -318,6 +315,8 @@ void FloorMap::genMap(int rooms, int enemies, int chestNo){
 	for(int i = 0; i < troom; i++){
 		fillBlock(roomList[i],EMPTYOUT);
 	}
+	
+	int chestNo = getChestNo();
 	int mapList[chestNo][2];
 	// TODO : Spawn Chests inside rooms only
 	for(int i = 0; i < chestNo ;){
@@ -343,10 +342,7 @@ void FloorMap::genMap(int rooms, int enemies, int chestNo){
 		floorMap[mapList[i][0]][mapList[i][1]] = CHESTOUT;
 	}
 	setBorders();
-	putPlayer();
-	addEnemies(enemies);
-	updateView();
-	newData = true;
+	addEnemies();
 }
 
 int FloorMap::getWidth(){
@@ -404,7 +400,7 @@ int FloorMap::getDisttoPlayer(Enemy e){
 	d[1] = isFree(e.x+1,e.y)? dist(e.x+1,e.y,playerX,playerY) : MAX_DIST;
 	d[2] = isFree(e.x,e.y-1)? dist(e.x,e.y-1,playerX,playerY) : MAX_DIST;
 	d[3] = isFree(e.x,e.y+1)? dist(e.x,e.y+1,playerX,playerY) : MAX_DIST;
-	d[4] = dist(e.x,e.y,playerX,playerY);
+	d[4] = dist(e.x,e.y,playerX,playerY) + 0.8;
 	return min(d,5);
 }
 
@@ -414,12 +410,12 @@ bool FloorMap::moveEnemies(){
 			enemyList[i].moved = false;
 		}
 	}
-	currentEnemyProcess = 1;
+	
 	for(int i = 0; i < enemyList.size(); i++){
 		if(enemyList[i].moved)
 			continue;
 		if(isAdj(enemyList[i].x,enemyList[i].y,playerX,playerY)){
-			log.logAttack(enemyList[i].name,player.pName);
+			//log.logAttack(enemyList[i].name,player.pName);
 			int temp = damageCalc(player,enemyList[i]);
 			if(temp)
 				log.logDamage(enemyList[i].name,player.pName,temp);
@@ -428,11 +424,13 @@ bool FloorMap::moveEnemies(){
 			player.getHit(temp);
 			currentKey = 0;
 			enemyList[i].moved = true;
-			log.logLine();
-			if(haltFor(ATTACKDELAY))
+			//log.logLine();
+			if(currentEnemyProcess == 1 && haltFor(ATTACKDELAY))
 				return true;
-			else
+			else{
+				currentEnemyProcess = 1;
 				return false;
+			}
 		}
 		else if(enemyList[i].visible){
 			int dir = getDisttoPlayer(enemyList[i]);

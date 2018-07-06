@@ -3,6 +3,21 @@
 
 using namespace std;
 
+void Actor::setSprite(Graphics &graphics, const std::string &filePath, int sourceX,
+					int sourceY, int width, int height){
+	sourceRect.x = sourceX;
+	sourceRect.y = sourceY;
+	sourceRect.w = width;
+	sourceRect.h = height;
+	
+	spriteSheet = SDL_CreateTextureFromSurface(graphics.getRenderer(), graphics.loadImage(filePath));
+}
+
+void Actor::draw(Graphics &graphics, int x, int y, int mw, int mh){
+	SDL_Rect dest = {x,y,mw,mh};
+	graphics.blitSurface( spriteSheet, &sourceRect, &destRect );
+}
+
 int min(int a,int b);
 
 int Player::getXP(){
@@ -53,7 +68,8 @@ bool Player::gainXP(int exp){
 	return false;
 }
 
-void Player::init(int type,string name){
+void Player::init(Graphics &graphics, int type,string name){
+	setSprite(graphics,"resources/blocksprite2.png",300,0,100,100);
 	pName = name;
 	maxhealth = getRand(17,20);
 	health = maxhealth;
@@ -76,10 +92,12 @@ string Player::getHealthStr(){
 	return s1.str();
 }
 
-void Enemy::init(int etype, int elevel){
+void Enemy::init(Graphics &graphics, int etype, int elevel){
+	setSprite(graphics,"resources/enemysprite.png",0+etype*100,0,100,100);
 	type = etype;
 	level = elevel;
-	x = 0;y = 0 ;
+	x = 0;
+	y = 0;
 	setStats();
 	health = maxhealth;
 }
