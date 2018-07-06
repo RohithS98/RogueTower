@@ -14,7 +14,7 @@ void Actor::setSprite(Graphics &graphics, const std::string &filePath, int sourc
 }
 
 void Actor::draw(Graphics &graphics, int x, int y, int mw, int mh){
-	SDL_Rect dest = {x,y,mw,mh};
+	SDL_Rect destRect = {x,y,mw,mh};
 	graphics.blitSurface( spriteSheet, &sourceRect, &destRect );
 }
 

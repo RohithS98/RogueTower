@@ -18,6 +18,7 @@ float dist(int x1,int y1, int x2, int y2);
 int min(float a[],int n);
 
 class Vector2{
+	public:
 	int x,y;
 	Vector2():x(0),y(0){}
 	Vector2(int x, int y):x(x),y(y){}

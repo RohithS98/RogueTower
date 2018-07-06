@@ -1,18 +1,35 @@
 #include "FloorMap.h"
-#include "Utils.h"
+#include <queue>
 
 FloorMap::FloorMap(){
+	;
+}
+
+FloorMap::FloorMap(Graphics &graphics){
 	//int seed = 1530335882;
 	int seed = time(NULL);
 	printf("Seed:%d\n",seed);
 	srand(seed);
-	MIN_ROOM_SIZE = 7;
-	MAX_ROOM_SIZE = 10;
 	VIEWSIZE = 10;
 	roomList = NULL;
 	newData = false;
+	playerPos = Vector2(-1,-1);
 	floorNo = 1;
 	currentEnemyProcess = -1;
+	blockSprites = SDL_CreateTextureFromSurface(graphics.getRenderer(), graphics.loadImage(blockSpriteLoc));
+	setSprites();
+}
+
+FloorMap::~FloorMap(){
+	free();
+}
+
+void FloorMap::setFloor(int floorNo){
+	this->floorNo = floorNo;
+}
+
+int FloorMap::getChestNo(){
+	return 6;
 }
 
 void FloorMap::fillBlock(int x, int y, int width, int height,int block_type){
@@ -23,7 +40,7 @@ void FloorMap::fillBlock(int x, int y, int width, int height,int block_type){
 	}
 }
 
-void FloorMap::putPlayer(){
+Vector2 FloorMap::putPlayer(){
 	int rno = getRand(0,troom-1);
 	bool flag = true;
 	int tx = roomList[rno].y+roomList[rno].h/2;
@@ -31,24 +48,52 @@ void FloorMap::putPlayer(){
 	while(flag){
 		tx = getRand(roomList[rno].y+1,roomList[rno].y+roomList[rno].h-1);
 		ty = getRand(roomList[rno].x+1,roomList[rno].x+roomList[rno].w-1);
-		if(floorMap[tx][ty] == EMPTYOUT){
-			playerX = tx;
-			playerY = ty;
+		if(isFree(tx,ty)){
 			flag = false;
 		}
 	}
-	log.clearLog();
-	log.logNewFloor(floorNo);
+	playerPos = Vector2(tx,ty);
+	return getPlayerPos();
 }
 
-int FloorMap::getPlayerX(){
-	return playerX;
+Vector2 FloorMap::getPlayerPos(){
+	return playerPos;
 }
 
-int FloorMap::getPlayerY(){
-	return playerY;
+void FloorMap::render(Graphics &graphics){
+	for(int i = 0; i < mHeight; i++){
+		for(int j = 0; j < mWidth ; j++){
+			SDL_Rect destRect = {j*TILE_SIZE,i*TILE_SIZE,TILE_SIZE,TILE_SIZE};
+			graphics.blitSurface(this->blockSprites,getSpriteRect(floorMap[i][j]),
+									&destRect);
+		}
+	}
 }
 
+SDL_Rect* FloorMap::getSpriteRect(int sprite){
+	return &tileClip[sprite];
+}
+
+void FloorMap::setSprites(){
+	SDL_Rect r = {0,0,100,100};
+	tileClip.push_back(r);
+	tileClip.push_back(r);
+	SDL_Rect r2 = {100,0,100,100};
+	tileClip.push_back(r2);
+	tileClip.push_back(r);
+	SDL_Rect r4 = {200,0,100,100};
+	tileClip.push_back(r4);
+	SDL_Rect r5 = {400,0,100,100};
+	tileClip.push_back(r5);
+	SDL_Rect r6 = {500,0,100,100};
+	tileClip.push_back(r6);
+	tileClip.push_back(r);
+	tileClip.push_back(r);
+	SDL_Rect r9 = {0,100,100,100};
+	tileClip.push_back(r9);
+}
+
+/*
 void FloorMap::attackEnemy(int eno){
 	currentKey = 0;
 	eno-=1;
@@ -108,7 +153,7 @@ bool FloorMap::movePlayer(int direction){
 	}
 	updateView();
 	return ret;
-}
+}*/
 
 void FloorMap::convert(int px, int py){
 	switch(floorMap[px][py]){
@@ -145,9 +190,9 @@ void FloorMap::setEnemyInvisible(){
 	}
 }
 
-void FloorMap::updateView(){
+void FloorMap::updateView(int x, int y){
 	std::queue<int> q1,q2,q3;
-	q1.push(playerX);q2.push(playerY);q3.push(VIEWSIZE);
+	q1.push(x);q2.push(y);q3.push(VIEWSIZE);
 	bool visited[mHeight][mWidth];
 	for(int i = 0; i < mHeight ; i++){
 		for(int j = 0; j < mWidth ; j++){
@@ -256,7 +301,7 @@ bool FloorMap::joinRoom(int a, int b){
 	makePath(startx,starty,endx,endy);
 	return true;
 }
-
+/*
 void FloorMap::addEnemies(int e){
 	for(int i = 0; i < e ; ){
 		int rno = getRand(0,troom-1),tx,ty;
@@ -278,7 +323,7 @@ void FloorMap::addEnemies(int e){
 	for(int i = 0; i < enemyList.size() ; i++){
 		floorMap[enemyList[i].x][enemyList[i].y] = EMPTYOUT;
 	}
-}
+}*/
 
 void FloorMap::genMap(int rooms){
 	free();
@@ -342,7 +387,7 @@ void FloorMap::genMap(int rooms){
 		floorMap[mapList[i][0]][mapList[i][1]] = CHESTOUT;
 	}
 	setBorders();
-	addEnemies();
+	//addEnemies();
 }
 
 int FloorMap::getWidth(){
@@ -352,7 +397,7 @@ int FloorMap::getWidth(){
 int FloorMap::getHeight(){
 	return mHeight;
 }
-
+/*
 void FloorMap::handleEvent(SDL_Event e){
 	if(e.type == SDL_KEYDOWN && e.key.repeat == 0){
 		switch(e.key.keysym.sym){
@@ -484,7 +529,7 @@ bool FloorMap::frameDone(){
 		return moveEnemies();
 	}
 	return false;
-}
+}*/
 
 void FloorMap::free(){
 	if(roomList!=NULL)
@@ -498,7 +543,7 @@ void FloorMap::renderDone(){
 
 bool FloorMap::isFree(int x, int y){
 	if(floorMap[x][y] == EMPTYOUT || floorMap[x][y] == EMPTYSEEN){
-		if(x==playerX&&y==playerY)
+		if(x==playerPos.x && y==playerPos.y)
 			return false;
 		for(int i = 0; i < enemyList.size() ; i++){
 			if(x == enemyList[i].x && y == enemyList[i].y){
@@ -528,18 +573,4 @@ int FloorMap::damageCalc(Actor a, Actor b){
 		return max((int)t,1);
 	else
 		return 0;
-}
-
-bool FloorMap::haltFor(int time){
-	LTimer stopTimer;
-	SDL_Event e;
-	stopTimer.start();
-	while(stopTimer.getTicks() < time){
-		while(SDL_PollEvent( &e ) != 0){
-			if( e.type == SDL_QUIT ){
-				return true;
-			}
-		}
-	}
-	return false;
 }

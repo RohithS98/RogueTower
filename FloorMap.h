@@ -4,10 +4,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <queue>
+#include <vector>
+#include <string>
 #include "Actors.h"
 #include "Logger.h"
-#include "LTimer.h"
+#include "Utils.h"
 
 const int FRAME_PER_MOVE = 7;
 const int ATTACKDELAY = 300;
@@ -29,6 +30,10 @@ namespace {
 	const int WIDTH = 66;
 	const int HEIGHT = 46;
 	const int MAX_DIST = 90;
+	const int MIN_ROOM_SIZE = 7;
+	const int MAX_ROOM_SIZE = 10;
+	const std::string blockSpriteLoc = "resources/blocksprite2.png";
+	const int TILE_SIZE = 15;
 }
 
 enum DIRECTION{
@@ -47,29 +52,33 @@ struct Room{
 class FloorMap{
 	
 	public:
-	
 	FloorMap();
-	
+	FloorMap(Graphics &graphics);
+	~FloorMap();
 	void free();
 	void setFloor(int floorNo);
 	void genMap(int rooms = 5);
+	int getChestNo();
 	int getBlock(int x, int y);
 	int getHeight();
 	int getWidth();
-	int getPlayerX();
-	int getPlayerY();
-	void putPlayer();
-	void updateView();
-	void handleEvent(SDL_Event);
-	bool frameDone();
+	Vector2 getPlayerPos();
 	bool inbounds(int,int);
-	bool newData;
-	void renderDone();
+	Vector2 putPlayer();
+	void setSprites();
+	void render(Graphics &graphics);
+	SDL_Rect* getSpriteRect(int sprite);
+	
+	void updateView(int x, int y);	
+	//void handleEvent(SDL_Event);	
+	//bool frameDone();	
+	bool newData;	
+	void renderDone();	
 	int VIEWSIZE;
-	Player player;
-	vector<Enemy> enemyList;
+	Vector2 playerPos;	
+	vector<Enemy> enemyList;	
 	int floorNo;
-	Logger log;
+	Logger log;	
 	
 	private:
 	
@@ -82,20 +91,20 @@ class FloorMap{
 	bool joinRoom(int,int);
 	void checkEnemy(int,int);
 	void setEnemyInvisible();
-	void addEnemies(int);
-	bool moveEnemies();
-	bool handleMove();
-	bool movePlayer(int dir);
+	//void addEnemies(int);
+	//bool moveEnemies();
+	//bool handleMove();
+	//bool movePlayer(int dir);
 	bool isFree(int x, int y);
 	int isEnemy(int,int);
 	int damageCalc(Actor a, Actor b);
-	void attackEnemy(int);
-	int getDisttoPlayer(Enemy e);
-	int MIN_ROOM_SIZE, MAX_ROOM_SIZE;
-	int floorMap[HEIGHT][WIDTH], mWidth, mHeight, playerX, playerY, troom, nextMove, nextMoveFrame,currentEnemyProcess, floor;
+	//void attackEnemy(int);
+	//int getDisttoPlayer(Enemy e);
+	int floorMap[HEIGHT][WIDTH], mWidth, mHeight, playerX, playerY, troom, nextMove, nextMoveFrame,currentEnemyProcess;
 	Room *roomList;
-	SDL_Keycode currentKey;
-	bool haltFor(int);
+	//SDL_Keycode currentKey;	
+	SDL_Texture* blockSprites;
+	vector<SDL_Rect> tileClip;
 };
 
 #endif

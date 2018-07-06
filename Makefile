@@ -2,7 +2,7 @@ GCC = g++
 CFLAGS = -g -w
 LFLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf
 
-OBJS = FloorMap.o testmap.o LTexture.o LTimer.o Actors.o LText.o Utils.o Logger.o main.o
+OBJS = FloorMap.o LTexture.o Game.o Actors.o LText.o Utils.o Logger.o main.o Graphics.o
 TARGET = RogueTower
 
 all : $(OBJS)
@@ -17,6 +17,7 @@ LText.o : LText.h
 Utils.o : Utils.h
 Logger.o : Logger.h
 main.o : Game.h
+Game.o : Game.h
 
 .cpp.o:
 	$(GCC) $(CFLAGS) -c $<

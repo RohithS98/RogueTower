@@ -1,18 +1,11 @@
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image>
-#include <SDL2/SDL_ttf>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 
 #include "Game.h"
 #include "Actors.h"
-#include "Graphics.h"
 #include "Utils.h"
-
-namespace {
-	const int FPS = 60;
-	const int MAX_FRAME_TIME = 1000/FPS;
-	const int FRAME_PER_MOVE = 7;
-	const int MAX_ROOMS = 10;
-}
+#include "Logger.h"
 
 Game::Game(){
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -29,8 +22,28 @@ Game::~Game(){
 
 void Game::gameLoop(){
 	Graphics graphics;
-	Input input;
 	SDL_Event e;
 	
-	fmap = FloorMap("ME",graphics);
-	fmap.genMap(MAX_ROOMS)
+	fmap = FloorMap(graphics);
+	fmap.setFloor(1);
+	fmap.genMap(MAX_ROOMS);
+	Vector2 playPos = fmap.putPlayer();
+	int x = 0, y = 20;
+	
+	float LAST_UPDATE;
+	while(true){
+		LAST_UPDATE = SDL_GetTicks();
+		graphics.clear();
+		while(SDL_PollEvent(&e) != 0){
+			if( e.type == SDL_QUIT ){
+				return ;
+			}
+		}
+		fmap.render(graphics);
+		graphics.flip();
+		float CURRENT_TIME = SDL_GetTicks();
+		if(CURRENT_TIME - LAST_UPDATE < FRAME_TIME){
+			SDL_Delay(FRAME_TIME - CURRENT_TIME + LAST_UPDATE);
+		}
+	}
+}

@@ -23,7 +23,7 @@ class Actor{
 	int health,speed,def,atk,x,y,level,maxhealth,acc,luck;
 	void setSprite(Graphics &graphics, const std::string &filePath, int sourceX,
 					int sourceY, int width, int height);
-	void draw(Graphics &graphics, int x, int y);
+	void draw(Graphics &graphics, int x, int y, int mw, int mh);
 	protected:
 	SDL_Rect sourceRect;
 	SDL_Texture* spriteSheet;

@@ -3,11 +3,6 @@
 
 #include "Graphics.h"
 
-namespace screen{
-	const int SCREEN_WIDTH = 1200;
-	const int SCREEN_HEIGHT = 820;
-};
-
 Graphics::Graphics(){
 	SDL_CreateWindowAndRenderer(screen::SCREEN_WIDTH, screen::SCREEN_HEIGHT, 0, &window, &renderer);
 	SDL_SetWindowTitle(window,"RogueTower");
@@ -17,12 +12,12 @@ Graphics::~Graphics(){
 	SDL_DestroyRenderer( renderer );
 	SDL_DestroyWindow( window );
 	std::map <std::string, SDL_Surface*> :: iterator itr;
-	for( itr = _spriteSheets.begin(); its != _spriteSheets.end(); ++itr){
-		SDL_FreeSurface(its->second);
+	for( itr = spriteSheets.begin(); itr != spriteSheets.end(); ++itr){
+		SDL_FreeSurface(itr->second);
 	}
-	std::map <std::string, TTF_Font*> :: iterator itr;
-	for( itr = _spriteSheets.begin(); its != _spriteSheets.end(); ++itr){
-		TTF_CloseFont(its->second);
+	std::map <std::string, TTF_Font*> :: iterator itr2;
+	for( itr2 = fontList.begin(); itr2 != fontList.end(); ++itr2){
+		TTF_CloseFont(itr2->second);
 	}
 }
 
@@ -54,4 +49,13 @@ void Graphics::clear(){
 
 SDL_Renderer* Graphics::getRenderer() const{
 	return renderer;
+}
+
+void Graphics::setViewPort(SDL_Rect rect){
+	SDL_RenderSetViewport(renderer,&rect);
+}
+
+void Graphics::defaultViewPort(){
+	SDL_Rect view = {0,0,screen::SCREEN_WIDTH, screen::SCREEN_HEIGHT};
+	SDL_RenderSetViewport(renderer,&view);
 }

@@ -1,17 +1,21 @@
 #ifndef __GAME_H__
 #define __GAME_H__
 
-#include "graphics.h"
+#include "Graphics.h"
 #include "FloorMap.h"
 #include "Logger.h"
+
+namespace {
+	const int FPS = 10;
+	const int FRAME_TIME = 1000/FPS;
+	const int FRAME_PER_MOVE = 7;
+	const int MAX_ROOMS = 10;
+}
 
 class Game{
 	public:
 		Game();
 		~Game();
-		gameLoop();
-		draw(Graphics &graphics);
-		update();
 	private:
 		void gameLoop();
 		void draw(Graphics &graphics);
@@ -21,6 +25,6 @@ class Game{
 		Player player;
 		SDL_Keycode currentKey;
 		int currentFrame;
-}
+};
 
 #endif
