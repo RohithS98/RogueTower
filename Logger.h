@@ -24,6 +24,8 @@ class Logger{
 	void clearLog();
 	void logLine();
 	void logMiss(std::string);
+	void logXP(int xp);
+	void logLevelUp(int level);
 	std::deque<std::string> logMessages;
 	void render(Graphics &graphics);
 	private:

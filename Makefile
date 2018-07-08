@@ -8,16 +8,13 @@ TARGET = RogueTower
 all : $(OBJS)
 	$(GCC) $(OBJS) $(LFLAGS) -o $(TARGET)
 
-testmap.o: FloorMap.h
-FloorMap.o : FloorMap.h
-LTexture.o: LTexture.h
-LTimer.o: LTimer.h
-Actors.o : Actors.h
-LText.o : LText.h
+FloorMap.o : FloorMap.h Actors.h Logger.h Utils.h
+Actors.o : Actors.h Graphics.h Utils.h
 Utils.o : Utils.h
-Logger.o : Logger.h
+Logger.o : Logger.h Graphics.h
 main.o : Game.h
-Game.o : Game.h
+Game.o : Game.h Graphics.h FloorMap.h Logger.h Actors.h Utils.h
+Graphics.o : Graphics.h
 
 .cpp.o:
 	$(GCC) $(CFLAGS) -c $<

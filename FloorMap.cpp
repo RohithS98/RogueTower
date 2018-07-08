@@ -1,13 +1,14 @@
 #include "FloorMap.h"
 #include <queue>
 
+//Check if 2 rooms intersect
 bool Room::isIntersecting(Room room){
 	if (x >= room.x + room.w+5 || w + x <= room.x-5)
         return false;
- 
+
      if (y >= room.y + room.h+5 || y + h <= room.y-5)
         return false;
- 
+
     return true;
 }
 
@@ -15,6 +16,7 @@ FloorMap::FloorMap(){
 	;
 }
 
+//Initialize floor map class, set floor to 1, set sprites.
 FloorMap::FloorMap(Graphics &graphics){
 	//int seed = 1530335882;
 	int seed = time(NULL);
@@ -38,18 +40,20 @@ void FloorMap::free(){
 	enemyList.erase(enemyList.begin(),enemyList.end());
 }
 
+//Set the floor number and log it
 void FloorMap::setFloor(Logger &log, int floorNo){
 	this->floorNo = floorNo;
 	log.logNewFloor(this->floorNo);
 }
 
+//Generate a new map
 void FloorMap::genMap(Graphics &graphics,int rooms){
 	free();
 	mWidth = WIDTH; mHeight = HEIGHT;
 	fillBlock(0,0,mWidth,mHeight,WALL);
 	roomList = new Room[rooms];
 	bool flag; troom = 0; int k = 0;
-	
+
 	for(int i = 0; i < rooms && k < 1000;){
 		Room tempRoom;
 		tempRoom.w = getRand(MIN_ROOM_SIZE, MAX_ROOM_SIZE);
@@ -69,11 +73,11 @@ void FloorMap::genMap(Graphics &graphics,int rooms){
 			troom++; k = 0;
 		}
 	}
-	
+
 	for(int i = 0; i < troom; i++){
 		fillBlock(roomList[i],EMPTYOUT);
 	}
-	
+
 	int chestNo = getChestNo();
 	int mapList[chestNo][2];
 	// TODO : Spawn Chests inside rooms only
@@ -85,21 +89,22 @@ void FloorMap::genMap(Graphics &graphics,int rooms){
 			i++;
 		}
 	}
-	
+
 	for(int i = 0; i < troom - 1; i++){
 		joinRoom(i,i+1);
 	}
-	
+
 	for(int i = 0; i < 8 ;){
 		if(joinRoom(getRand(0,troom-1),getRand(0,troom-1))){
 			i++;
 		}
 	}
-	
+
 	for(int i = 0 ; i < chestNo ; i++){
 		floorMap[mapList[i][0]][mapList[i][1]] = CHESTOUT;
 	}
 	setBorders();
+	putStairs();
 	addEnemies(graphics);
 }
 
@@ -123,6 +128,7 @@ Vector2 FloorMap::getPlayerPos(){
 	return playerPos;
 }
 
+//Check if point is in bounds of map
 bool FloorMap::inbounds(int px, int py){
 	if(py < mWidth && px >=0 && px < mHeight && py >=0){
 		return true;
@@ -130,6 +136,7 @@ bool FloorMap::inbounds(int px, int py){
 	return false;
 }
 
+//Puts the player in a random room
 Vector2 FloorMap::putPlayer(){
 	int rno = getRand(0,troom-1);
 	bool flag = true;
@@ -143,28 +150,33 @@ Vector2 FloorMap::putPlayer(){
 		}
 	}
 	playerPos = Vector2(tx,ty);
+	updateView();
 	return getPlayerPos();
 }
 
+//Sets the sprites for the map
 void FloorMap::setSprites(){
 	SDL_Rect r = {0,0,100,100};
-	tileClip.push_back(r);
-	tileClip.push_back(r);
 	SDL_Rect r2 = {100,0,100,100};
-	tileClip.push_back(r2);
-	tileClip.push_back(r);
 	SDL_Rect r4 = {200,0,100,100};
-	tileClip.push_back(r4);
 	SDL_Rect r5 = {400,0,100,100};
-	tileClip.push_back(r5);
 	SDL_Rect r6 = {500,0,100,100};
-	tileClip.push_back(r6);
-	tileClip.push_back(r);
-	tileClip.push_back(r);
-	SDL_Rect r9 = {0,100,100,100};
-	tileClip.push_back(r9);
+	SDL_Rect r10 = {0,100,100,100};
+	SDL_Rect r9 = {100,100,100,100};
+	tileClip.push_back(r);		//WALL
+	tileClip.push_back(r);		//EMPTYOUT
+	tileClip.push_back(r2);		//EMPTYSEEN
+	tileClip.push_back(r);		//CHESTOUT
+	tileClip.push_back(r4);		//CHESTCLOSED
+	tileClip.push_back(r5);		//EMPTYBRIGHT
+	tileClip.push_back(r6);		//WALLEDGE
+	tileClip.push_back(r);		//WALLEDGEOUT
+	tileClip.push_back(r);		//STAIROUT
+	tileClip.push_back(r9);		//STAIRBRIGHT
+	tileClip.push_back(r10);	//STAIRSEEN
 }
 
+//Draws the base map on screen
 void FloorMap::drawMap(Graphics &graphics){
 	int ts = global::TILE_SIZE;
 	for(int i = 0; i < mHeight; i++){
@@ -176,6 +188,7 @@ void FloorMap::drawMap(Graphics &graphics){
 	}
 }
 
+//Draws the viewcone(using BFS)
 void FloorMap::drawViewCone(Graphics &graphics){
 	int ts = global::TILE_SIZE;
 	std::queue<int> q1,q2,q3;
@@ -303,6 +316,7 @@ void FloorMap::handleMove(Player &player, Logger &log, SDL_Keycode key, int curr
 int FloorMap::highlight(int tiletype){
 	switch(tiletype){
 		case EMPTYSEEN:return EMPTYBRIGHT;
+		case STAIRSEEN:return STAIRBRIGHT;
 		default: return tiletype;
 	}
 }
@@ -368,8 +382,8 @@ void FloorMap::makePath(int sx, int sy, int ex, int ey){
 }
 
 bool FloorMap::emptyNeighbour(int x, int y){
-	if( floorMap[x][y] == EMPTYOUT && floorMap[x-1][y] == EMPTYOUT && 
-			floorMap[x+1][y] == EMPTYOUT && floorMap[x][y+1] == EMPTYOUT && 
+	if( floorMap[x][y] == EMPTYOUT && floorMap[x-1][y] == EMPTYOUT &&
+			floorMap[x+1][y] == EMPTYOUT && floorMap[x][y+1] == EMPTYOUT &&
 			floorMap[x][y-1] == EMPTYOUT){
 		floorMap[x][y] = CHESTOUT;
 		return true;
@@ -387,6 +401,9 @@ void FloorMap::convert(int px, int py){
 			break;
 		case WALLEDGEOUT:
 			floorMap[px][py] = WALLEDGE;
+			break;
+		case STAIROUT:
+			floorMap[px][py] = STAIRSEEN;
 			break;
 	}
 }
@@ -515,7 +532,7 @@ void FloorMap::moveEnemies(Logger &log, Player &player){
 
 
 bool FloorMap::isFree(int x, int y){
-	if(floorMap[x][y] == EMPTYOUT || floorMap[x][y] == EMPTYSEEN){
+	if(isWalkable(x,y)){
 		if(x==playerPos.x && y==playerPos.y)
 			return false;
 		for(int i = 0; i < enemyList.size() ; i++){
@@ -528,8 +545,17 @@ bool FloorMap::isFree(int x, int y){
 	return false;
 }
 
+bool FloorMap::isWalkable(int x, int y){
+	switch(floorMap[x][y]){
+		case EMPTYOUT:case EMPTYSEEN:case STAIROUT:case STAIRSEEN:
+			return true;
+		default:
+			return false;
+	}
+}
+
 int FloorMap::isEnemy(int x, int y){
-	if(floorMap[x][y] == EMPTYOUT || floorMap[x][y] == EMPTYSEEN){
+	if(isWalkable(x,y)){
 		for(int i = 0; i < enemyList.size() ; i++){
 			if(x == enemyList[i].x && y == enemyList[i].y){
 				return i+1;
@@ -558,6 +584,11 @@ void FloorMap::attackEnemy(Player &player, Logger &log, int eno){
 		log.logMiss(player.pName);
 	if(enemyList[eno].getHit(t)){
 		log.logKilled(enemyList[eno].name);
+		int xp = getXP(enemyList[eno]);
+		log.logXP(xp);
+		if(player.gainXP(xp)){
+			log.logLevelUp(player.level);
+		}
 		enemyList.erase(enemyList.begin()+eno);
 	}
 }
@@ -573,22 +604,23 @@ int FloorMap::getDisttoPlayer(Enemy e){
 	return min(d,5);
 }
 
-/*
-bool FloorMap::frameDone(){
-	if(nextMoveFrame!=-1){
-		if(!nextMoveFrame && currentEnemyProcess == -1){
-			bool t = handleMove();
-			if(t){
-				currentEnemyProcess = 0;
-			}
-			newData = true;
+int FloorMap::getXP(Enemy enemy){
+	float t = 1.5;
+	t = t*enemy.level*((enemy.type+3)/3.0);
+	return t;
+}
+
+void FloorMap::putStairs(){
+	int rno = getRand(0,troom-1);
+	bool flag = true;
+	int tx = roomList[rno].y+roomList[rno].h/2;
+	int ty = roomList[rno].x+roomList[rno].w/2;
+	while(flag){
+		tx = getRand(roomList[rno].y+1,roomList[rno].y+roomList[rno].h-1);
+		ty = getRand(roomList[rno].x+1,roomList[rno].x+roomList[rno].w-1);
+		if(isFree(tx,ty)){
+			flag = false;
 		}
-		nextMoveFrame = (nextMoveFrame+1)%FRAME_PER_MOVE;
 	}
-	if(currentEnemyProcess!=-1){
-		newData = true;
-		nextMoveFrame = (nextMoveFrame+1)%FRAME_PER_MOVE;
-		return moveEnemies();
-	}
-	return false;
-}*/
+	floorMap[tx][ty] = STAIROUT;
+}

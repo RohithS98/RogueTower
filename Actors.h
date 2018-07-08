@@ -22,6 +22,8 @@ enum ENEMYTYPE{
 namespace PlayerConst{
 	const std::string fontName = "resources/VT323-Regular.ttf";
 	const int size = 24;
+	const SDL_Color statnamecol = {0x0,0x0,0x0,0xFF};
+	const SDL_Color statvalcol = {0x77,0x0,0x0,0xFF};
 }
 
 class Actor{
@@ -53,6 +55,7 @@ class Player : public Actor{
 	std::string pName;
 	int xp,nextxp;
 	private:
+	std::string getString(int x);
 	int getXP();
 	void levelup();
 };

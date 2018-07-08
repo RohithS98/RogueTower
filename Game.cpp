@@ -4,8 +4,8 @@
 #include "Game.h"
 #include "Actors.h"
 #include "Utils.h"
-#include "Logger.h"
 
+//Initializes SDL and starts game loop
 Game::Game(){
 	SDL_Init(SDL_INIT_EVERYTHING);
 	IMG_Init( IMG_INIT_PNG ) ;
@@ -13,12 +13,14 @@ Game::Game(){
 	gameLoop();
 }
 
+//Quits SDL and subsystems
 Game::~Game(){
 	TTF_Quit();
 	IMG_Quit();
 	SDL_Quit();
 }
 
+//Game loop. Handles all events and drawing and updating of elements
 void Game::gameLoop(){
 	Graphics graphics;
 	SDL_Event e;
@@ -30,7 +32,7 @@ void Game::gameLoop(){
 	Vector2 playPos = fmap.putPlayer();
 	player.init(graphics);
 	player.setPosition(playPos);
-	fmap.updateView();
+	//fmap.updateView();
 	currentKey = 0;
 	currentFrame = -1;
 	
@@ -38,7 +40,7 @@ void Game::gameLoop(){
 	while(true){
 		LAST_UPDATE = SDL_GetTicks();
 		graphics.clear();
-		while(SDL_PollEvent(&e) != 0){
+		while(SDL_PollEvent(&e) != 0){	//Handle all inputs
 			if( e.type == SDL_QUIT ){
 				return ;
 			}
@@ -58,25 +60,25 @@ void Game::gameLoop(){
 			}
 		}
 		
-		this->update(currentKey,currentFrame);
-		if(currentFrame >= 0){
+		this->update(currentKey,currentFrame);	//Update frame
+		if(currentFrame >= 0){					//Increment frame counter
 			currentFrame = (currentFrame+1)%FRAME_PER_MOVE;
 		}
-		if( fmap.currentEnemyProcess == 1 ){
-			printf("T");
-			currentKey = 0;
+		if( fmap.currentEnemyProcess == 1 ){	//If enemies were not processed fully
+			currentKey = 0;						//Stop movement
 			currentFrame = -1;
 		}
 		
-		draw(graphics);
+		draw(graphics);		//Draw graphics
 		
 		float CURRENT_TIME = SDL_GetTicks();
-		if(CURRENT_TIME - LAST_UPDATE < FRAME_TIME){
+		if(CURRENT_TIME - LAST_UPDATE < FRAME_TIME){	//Wait to maintain frame rate
 			SDL_Delay(FRAME_TIME - CURRENT_TIME + LAST_UPDATE);
 		}
 	}
 }
 
+//Draws all the graphics
 void Game::draw(Graphics &graphics){
 	graphics.setViewPort(GAME_VIEWPORT);
 	fmap.drawMap(graphics);
@@ -85,11 +87,12 @@ void Game::draw(Graphics &graphics){
 	player.draw(graphics);
 	graphics.setViewPort(LOG_VIEWPORT);
 	log.render(graphics);
-	//graphics.setViewPort(STAT_VIEWPORT);
-	//player.renderStats(graphics);
+	graphics.setViewPort(STAT_VIEWPORT);
+	player.renderStat(graphics);
 	graphics.flip();
 }
 
+//Updates map and player
 void Game::update(SDL_Keycode key, int currentFrame){
 	fmap.handleMove(player,log,key,currentFrame);
 	player.setPosition(fmap.getPlayerPos());

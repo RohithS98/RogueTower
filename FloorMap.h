@@ -20,7 +20,8 @@ enum BLOCK_TYPE{
 	WALLEDGEOUT = 7,
 	WALLEDGE = 6,
 	STAIROUT = 8,
-	STAIR = 9,
+	STAIRBRIGHT = 9,
+	STAIRSEEN = 10,
 };
 
 namespace {
@@ -32,7 +33,7 @@ namespace {
 	const std::string blockSpriteLoc = "resources/blocksprite2.png";
 	const int MAXROOMNO = 10;
 	const int MAX_ENEMY_NO = 10;
-	const int VIEWSIZE = 8;
+	const int VIEWSIZE = 10;
 }
 
 enum DIRECTION{
@@ -44,12 +45,12 @@ enum DIRECTION{
 
 struct Room{
 	int x,y,w,h;
-	
+
 	bool isIntersecting(Room room);
 };
 
 class FloorMap{
-	
+
 	public:
 	FloorMap();
 	FloorMap(Graphics &graphics);
@@ -70,16 +71,16 @@ class FloorMap{
 	void drawEnemy(Graphics &graphics);
 	void setPlayerPos(Vector2 ppos);
 	SDL_Rect* getSpriteRect(int sprite);
-	void updateView();	
+	void updateView();
 	void handleMove(Player &player, Logger &log, SDL_Keycode key, int currentFrame);
-	
-	Vector2 playerPos;	
-	std::vector<Enemy> enemyList;	
+
+	Vector2 playerPos;
+	std::vector<Enemy> enemyList;
 	int floorNo, currentEnemyProcess;
-	Logger log;	
-	
+	Logger log;
+
 	private:
-	
+
 	int highlight(int);
 	bool movePlayer(Logger &log, int dir, Player &player);
 	void fillBlock(int x, int y, int width, int height,int block_type = EMPTYOUT);
@@ -89,6 +90,7 @@ class FloorMap{
 	void convert(int, int);
 	void setBorders();
 	bool joinRoom(int,int);
+	bool isWalkable(int,int);
 	void checkEnemy(int,int);
 	void setEnemyInvisible();
 	int getEnemyLevel();
@@ -100,9 +102,11 @@ class FloorMap{
 	int damageCalc(Actor a, Actor b);
 	void attackEnemy(Player &player, Logger &log, int eno);
 	int getDisttoPlayer(Enemy e);
+	int getXP(Enemy);
+	void putStairs();
 	int floorMap[HEIGHT][WIDTH], mWidth, mHeight, troom;
 	Room *roomList;
-	//SDL_Keycode currentKey;	
+	//SDL_Keycode currentKey;
 	SDL_Texture* blockSprites;
 	std::vector<SDL_Rect> tileClip;
 };

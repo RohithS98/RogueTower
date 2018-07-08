@@ -21,7 +21,7 @@ void Actor::draw(Graphics &graphics){
 int min(int a,int b);
 
 int Player::getXP(){
-	return 2*level*log10(level) + 10;
+	return 3*level*log10(level) + 15;
 }
 
 void Player::boostAttack(int a){
@@ -67,20 +67,35 @@ bool Player::gainXP(int exp){
 	}
 	return false;
 }
-/*
+
+std::string Player::getString(int x){
+	stringstream st1;
+	st1.str("");
+	st1<<x;
+	return st1.str();
+}
+
 void Player::renderStat(Graphics &graphics){
-	TTF_Font* gFont = graphics.loadFont(Player::fontName,Player::size);
+	TTF_Font* gFont = graphics.loadFont(PlayerConst::fontName,PlayerConst::size);
 	SDL_Rect bounds = {0,0,210,220};
 	graphics.drawRect(bounds,0xBB,0xBB,0xBB);
-	for(int i = 0; i < logMessages.size(); i++){
-		SDL_Surface* textSurf = TTF_RenderText_Solid( gFont, logMessages[i].c_str(),
-														Log::logColor);
-		SDL_Rect source = {0, 0, textSurf->w, textSurf->h};
-		SDL_Rect dest = {5, 160 + 15*(i-logMessages.size()), textSurf->w, textSurf->h};
-		graphics.blitSurface(SDL_CreateTextureFromSurface(graphics.getRenderer() , 																textSurf),&source,&dest);
-		SDL_FreeSurface( textSurf );
-	}
-}*/
+	int i = 0;
+	graphics.blitTextCenterX(gFont,"PLAYER:",PlayerConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"LEVEL:",PlayerConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"HEALTH:",PlayerConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"ATTACK:",PlayerConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"DEFENSE:",PlayerConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"XP:",PlayerConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"NEXTLVL:",PlayerConst::statnamecol,105, 25*i++);
+	i = 0;
+	graphics.blitTextCenterX(gFont,pName,PlayerConst::statvalcol,105,25*i++,105);
+	graphics.blitTextCenterX(gFont,getString(level),PlayerConst::statvalcol,105,25*i++,105);
+	graphics.blitTextCenterX(gFont,getHealthStr(),PlayerConst::statvalcol,105, 25*i++,105);
+	graphics.blitTextCenterX(gFont,getString(atk),PlayerConst::statvalcol,105, 25*i++,105);
+	graphics.blitTextCenterX(gFont,getString(def),PlayerConst::statvalcol,105, 25*i++,105);
+	graphics.blitTextCenterX(gFont,getString(xp),PlayerConst::statvalcol,105, 25*i++,105);
+	graphics.blitTextCenterX(gFont,getString(nextxp),PlayerConst::statvalcol,105, 25*i++,105);
+}
 
 void Player::init(Graphics &graphics, int type,string name){
 	setSprite(graphics,"resources/blocksprite2.png",300,0,100,100);
@@ -89,7 +104,7 @@ void Player::init(Graphics &graphics, int type,string name){
 	health = maxhealth;
 	atk = getRand(3,5);
 	def = getRand(3,5);
-	acc = 90;
+	acc = 95;
 	luck = 1;
 	speed = 1;
 	x = 0;
@@ -97,7 +112,7 @@ void Player::init(Graphics &graphics, int type,string name){
 	level = 1;
 	xp = 0;
 	nextxp = getXP();
-}	
+}
 
 void Player::setPosition(Vector2 vec){
 	x = vec.x;
@@ -133,9 +148,9 @@ void Enemy::setStats(){
 	int basea,based,basemh,bases,baseac,basel;
 	switch(type){
 		case ETYPE1:
-			basea = 2;based = 1;basemh = 5;bases = 1;baseac = 70;basel = 1;name = "Blob";break;
+			basea = 2;based = 1;basemh = 5;bases = 1;baseac = 85;basel = 1;name = "Blob";break;
 		case ETYPE2:
-			basea = 3;based = 2;basemh = 4;bases = 1;baseac = 50;basel = 1;name = "Blob2";break;
+			basea = 3;based = 2;basemh = 4;bases = 1;baseac = 70;basel = 1;name = "Blob2";break;
 	}
 	atk = basea + (level-1)*getRand(1,2);
 	def = based + (level-1)*getRand(1,2);
