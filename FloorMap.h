@@ -8,7 +8,7 @@
 #include <string>
 #include "Actors.h"
 #include "Logger.h"
-#include "Utils.h"
+//#include "Utils.h"
 
 enum BLOCK_TYPE{
 	WALL = 0,
@@ -25,11 +25,11 @@ enum BLOCK_TYPE{
 };
 
 namespace {
-	const int WIDTH = 66;
-	const int HEIGHT = 46;
-	const int MAX_DIST = 90;
-	const int MIN_ROOM_SIZE = 7;
-	const int MAX_ROOM_SIZE = 10;
+	const int WIDTH = 55;
+	const int HEIGHT = 36;
+	const int MAX_DIST = 70;
+	const int MIN_ROOM_SIZE = 6;
+	const int MAX_ROOM_SIZE = 9;
 	const std::string blockSpriteLoc = "resources/blocksprite2.png";
 	const int MAXROOMNO = 10;
 	const int MAX_ENEMY_NO = 10;
@@ -72,7 +72,7 @@ class FloorMap{
 	void setPlayerPos(Vector2 ppos);
 	SDL_Rect* getSpriteRect(int sprite);
 	void updateView();
-	void handleMove(Player &player, Logger &log, SDL_Keycode key, int currentFrame);
+	void handleMove(Player &player, Logger &log, SDL_Keycode key, int currentFrame, Graphics &graphics);
 
 	Vector2 playerPos;
 	std::vector<Enemy> enemyList;
@@ -104,6 +104,7 @@ class FloorMap{
 	int getDisttoPlayer(Enemy e);
 	int getXP(Enemy);
 	void putStairs();
+	void goToNextLevel(Logger &log, Graphics &graphics);
 	int floorMap[HEIGHT][WIDTH], mWidth, mHeight, troom;
 	Room *roomList;
 	//SDL_Keycode currentKey;

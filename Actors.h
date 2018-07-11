@@ -19,11 +19,12 @@ enum ENEMYTYPE{
 	ETYPE2 = 1,
 };
 
-namespace PlayerConst{
+namespace ActorConst{
 	const std::string fontName = "resources/VT323-Regular.ttf";
 	const int size = 24;
 	const SDL_Color statnamecol = {0x0,0x0,0x0,0xFF};
 	const SDL_Color statvalcol = {0x77,0x0,0x0,0xFF};
+	const float enemyScale = 1.6;
 }
 
 class Actor{
@@ -31,7 +32,7 @@ class Actor{
 	int health,speed,def,atk,x,y,level,maxhealth,acc,luck;
 	void setSprite(Graphics &graphics, const std::string &filePath, int sourceX,
 					int sourceY, int width, int height);
-	void draw(Graphics &graphics);
+	void draw(Graphics &graphics) ;
 	protected:
 	SDL_Rect sourceRect;
 	SDL_Texture* spriteSheet;
@@ -54,6 +55,7 @@ class Player : public Actor{
 	std::string getHealthStr();
 	std::string pName;
 	int xp,nextxp;
+	void draw(Graphics &graphics);
 	private:
 	std::string getString(int x);
 	int getXP();
@@ -70,6 +72,7 @@ class Enemy : public Actor{
 	bool visible,moved;
 	void setVisible();
 	void setInvisible();
+	void draw(Graphics &graphics);
 	private:
 	void setStats();
 };

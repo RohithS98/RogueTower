@@ -22,6 +22,6 @@ struct Vector2{
 };
 
 namespace global{
-	const int TILE_SIZE = 15;
+	const int TILE_SIZE = 18;
 }
 #endif

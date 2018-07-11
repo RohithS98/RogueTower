@@ -1,16 +1,23 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <iostream>
 
 #include "Graphics.h"
 
 //Creates the window and renderer. Sets game name.
 Graphics::Graphics(){
+	#ifdef DEBUG
+	std::cout<<"Initializing graphics"<<std::endl;
+	#endif
 	SDL_CreateWindowAndRenderer(screen::SCREEN_WIDTH, screen::SCREEN_HEIGHT, 0, &window, &renderer);
 	SDL_SetWindowTitle(window,"RogueTower");
 }
 
 //Destroys the renderer and window
 Graphics::~Graphics(){
+	#ifdef DEBUG
+	std::cout<<"Stoping graphics"<<std::endl;
+	#endif
 	SDL_DestroyRenderer( renderer );
 	SDL_DestroyWindow( window );
 }

@@ -12,9 +12,14 @@ void Actor::setSprite(Graphics &graphics, const std::string &filePath, int sourc
 												graphics.loadImage(filePath));
 }
 
-void Actor::draw(Graphics &graphics){
-	SDL_Rect destRect = {y*global::TILE_SIZE,x*global::TILE_SIZE,global::TILE_SIZE,
-							global::TILE_SIZE};
+void Player::draw(Graphics &graphics){
+	SDL_Rect destRect = {y*global::TILE_SIZE,x*global::TILE_SIZE,global::TILE_SIZE,global::TILE_SIZE};
+	graphics.blitSurface( spriteSheet, &sourceRect, &destRect );
+}
+
+void Enemy::draw(Graphics &graphics){
+	float halfScale = (ActorConst::enemyScale - 1.0)/2;
+	SDL_Rect destRect = {(y-halfScale)*global::TILE_SIZE,(x-halfScale)*global::TILE_SIZE,global::TILE_SIZE*ActorConst::enemyScale,global::TILE_SIZE*ActorConst::enemyScale};
 	graphics.blitSurface( spriteSheet, &sourceRect, &destRect );
 }
 
@@ -54,7 +59,7 @@ void Player::levelup(){
 	def += getRand(2,3);
 	maxhealth += getRand(3,5);
 	health = min(health + 2,maxhealth);
-	luck += getRand(0,1);
+	luck = min(10,luck+getRand(0,1));
 }
 
 bool Player::gainXP(int exp){
@@ -76,25 +81,25 @@ std::string Player::getString(int x){
 }
 
 void Player::renderStat(Graphics &graphics){
-	TTF_Font* gFont = graphics.loadFont(PlayerConst::fontName,PlayerConst::size);
+	TTF_Font* gFont = graphics.loadFont(ActorConst::fontName,ActorConst::size);
 	SDL_Rect bounds = {0,0,210,220};
 	graphics.drawRect(bounds,0xBB,0xBB,0xBB);
 	int i = 0;
-	graphics.blitTextCenterX(gFont,"PLAYER:",PlayerConst::statnamecol,105, 25*i++);
-	graphics.blitTextCenterX(gFont,"LEVEL:",PlayerConst::statnamecol,105, 25*i++);
-	graphics.blitTextCenterX(gFont,"HEALTH:",PlayerConst::statnamecol,105, 25*i++);
-	graphics.blitTextCenterX(gFont,"ATTACK:",PlayerConst::statnamecol,105, 25*i++);
-	graphics.blitTextCenterX(gFont,"DEFENSE:",PlayerConst::statnamecol,105, 25*i++);
-	graphics.blitTextCenterX(gFont,"XP:",PlayerConst::statnamecol,105, 25*i++);
-	graphics.blitTextCenterX(gFont,"NEXTLVL:",PlayerConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"PLAYER:",ActorConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"LEVEL:",ActorConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"HEALTH:",ActorConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"ATTACK:",ActorConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"DEFENSE:",ActorConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"XP:",ActorConst::statnamecol,105, 25*i++);
+	graphics.blitTextCenterX(gFont,"NEXTLVL:",ActorConst::statnamecol,105, 25*i++);
 	i = 0;
-	graphics.blitTextCenterX(gFont,pName,PlayerConst::statvalcol,105,25*i++,105);
-	graphics.blitTextCenterX(gFont,getString(level),PlayerConst::statvalcol,105,25*i++,105);
-	graphics.blitTextCenterX(gFont,getHealthStr(),PlayerConst::statvalcol,105, 25*i++,105);
-	graphics.blitTextCenterX(gFont,getString(atk),PlayerConst::statvalcol,105, 25*i++,105);
-	graphics.blitTextCenterX(gFont,getString(def),PlayerConst::statvalcol,105, 25*i++,105);
-	graphics.blitTextCenterX(gFont,getString(xp),PlayerConst::statvalcol,105, 25*i++,105);
-	graphics.blitTextCenterX(gFont,getString(nextxp),PlayerConst::statvalcol,105, 25*i++,105);
+	graphics.blitTextCenterX(gFont,pName,ActorConst::statvalcol,105,25*i++,105);
+	graphics.blitTextCenterX(gFont,getString(level),ActorConst::statvalcol,105,25*i++,105);
+	graphics.blitTextCenterX(gFont,getHealthStr(),ActorConst::statvalcol,105, 25*i++,105);
+	graphics.blitTextCenterX(gFont,getString(atk),ActorConst::statvalcol,105, 25*i++,105);
+	graphics.blitTextCenterX(gFont,getString(def),ActorConst::statvalcol,105, 25*i++,105);
+	graphics.blitTextCenterX(gFont,getString(xp),ActorConst::statvalcol,105, 25*i++,105);
+	graphics.blitTextCenterX(gFont,getString(nextxp),ActorConst::statvalcol,105, 25*i++,105);
 }
 
 void Player::init(Graphics &graphics, int type,string name){
@@ -131,7 +136,7 @@ string Player::getHealthStr(){
 }
 
 void Enemy::init(Graphics &graphics, int etype, int elevel){
-	setSprite(graphics,"resources/enemysprite.png",0+etype*100,0,100,100);
+	setSprite(graphics,"resources/enemysprite2.png",0+etype*100,0,100,100);
 	type = etype;
 	level = elevel;
 	x = 0;
@@ -150,12 +155,13 @@ void Enemy::setStats(){
 		case ETYPE1:
 			basea = 2;based = 1;basemh = 5;bases = 1;baseac = 85;basel = 1;name = "Blob";break;
 		case ETYPE2:
-			basea = 3;based = 2;basemh = 4;bases = 1;baseac = 70;basel = 1;name = "Blob2";break;
+			basea = 3;based = 2;basemh = 4;bases = 1;baseac = 70;basel = 1;name = "Ghost";break;
 	}
 	atk = basea + (level-1)*getRand(1,2);
 	def = based + (level-1)*getRand(1,2);
 	maxhealth = basemh + (level-1)*getRand(2,4);
 	acc = baseac + (level/2)*getRand(0,1) + getRand(0,1)*(level/2);
+	luck = basel + ((level-1)/2)*getRand(0,1);
 }
 
 bool Enemy::getHit(int damage){

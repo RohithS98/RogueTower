@@ -11,13 +11,13 @@ struct SDL_Renderer;
 
 namespace screen{
 	const int SCREEN_WIDTH = 1200;
-	const int SCREEN_HEIGHT = 820;
+	const int SCREEN_HEIGHT = 808;
 };
 
 class Graphics{
-	
+
 	public:
-	
+
 	Graphics();
 	~Graphics();
 	SDL_Surface* loadImage(const std::string &filePath);
@@ -31,9 +31,9 @@ class Graphics{
 	void flip();
 	void clear();
 	SDL_Renderer* getRenderer() const;
-	
+
 	private:
-	
+
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	std::map<std::string, SDL_Surface*> spriteSheets;

@@ -76,6 +76,13 @@ void Logger::logLevelUp(int level){
 	logAdd(s.str());
 }
 
+void Logger::logCrit(std::string a,std::string b,int d){
+	std::stringstream s;
+	s.str("");
+	s<<"CRITICAL HIT!! "<<a<<" inflicted "<<d<<" damage on "<<b;
+	logAdd(s.str());
+}
+
 //Renders the log messages using graphics. Newest messages are at bottom
 void Logger::render(Graphics &graphics){
 	TTF_Font* gFont = graphics.loadFont(Log::fontName,Log::size);

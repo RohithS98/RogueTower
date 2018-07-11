@@ -58,8 +58,8 @@ void FloorMap::genMap(Graphics &graphics,int rooms){
 		Room tempRoom;
 		tempRoom.w = getRand(MIN_ROOM_SIZE, MAX_ROOM_SIZE);
 		tempRoom.h = getRand(MIN_ROOM_SIZE, MAX_ROOM_SIZE);
-		tempRoom.x = getRand(3, mWidth - tempRoom.w - 3);
-		tempRoom.y = getRand(3, mHeight - tempRoom.h - 3);
+		tempRoom.x = getRand(2, mWidth - tempRoom.w - 2);
+		tempRoom.y = getRand(2, mHeight - tempRoom.h - 2);
 		flag = true;
 		k += 1;
 		for(int j = 0; j < i; j++){
@@ -109,7 +109,7 @@ void FloorMap::genMap(Graphics &graphics,int rooms){
 }
 
 int FloorMap::getChestNo(){
-	return 6;
+	return getRand(3,5);
 }
 
 int FloorMap::getBlock(int x, int y){
@@ -279,7 +279,7 @@ void FloorMap::updateView(){
 	}
 }
 
-void FloorMap::handleMove(Player &player, Logger &log, SDL_Keycode key, int currentFrame){
+void FloorMap::handleMove(Player &player, Logger &log, SDL_Keycode key, int currentFrame, Graphics &graphics){
 	setPlayerPos(player.getPosition());
 	//printf("CurrentFrame : %d\n",currentFrame);
 	if(currentEnemyProcess == -1 && currentFrame == 0){
@@ -301,6 +301,11 @@ void FloorMap::handleMove(Player &player, Logger &log, SDL_Keycode key, int curr
 				ret = movePlayer(log,RIGHT,player);
 				//printf("RIGHT\n");
 				break;
+		}
+		if(floorMap[player.x][player.y] == STAIRSEEN){
+			this->goToNextLevel(log,graphics);
+			player.setPosition(this->putPlayer());
+			return;
 		}
 		if(ret){
 			currentEnemyProcess = 0;
@@ -422,10 +427,10 @@ bool FloorMap::joinRoom(int a, int b){
 	if(a==b){
 		return false;
 	}
-	int startx = roomList[a].x + getRand(3,roomList[a].w-3),
-		starty = roomList[a].y + getRand(3,roomList[a].h-3),
-		endx = roomList[b].x + getRand(3,roomList[b].w-3),
-		endy = roomList[b].y + getRand(3,roomList[b].h-3);
+	int startx = roomList[a].x + getRand(2,roomList[a].w-2),
+		starty = roomList[a].y + getRand(2,roomList[a].h-2),
+		endx = roomList[b].x + getRand(2,roomList[b].w-2),
+		endy = roomList[b].y + getRand(2,roomList[b].h-2);
 	makePath(startx,starty,endx,endy);
 	return true;
 }
@@ -488,7 +493,12 @@ void FloorMap::moveEnemies(Logger &log, Player &player){
 		if(isAdj(enemyList[i].x,enemyList[i].y,player.x,player.y)){
 			int temp = damageCalc(player,enemyList[i]);
 			if(temp)
-				log.logDamage(enemyList[i].name,player.pName,temp);
+				if(temp < 0){
+					temp = -temp;
+					log.logCrit(enemyList[i].name,player.pName,temp);
+				}
+				else
+					log.logDamage(enemyList[i].name,player.pName,temp);
 			else
 				log.logMiss(enemyList[i].name);
 			player.getHit(temp);
@@ -568,8 +578,16 @@ int FloorMap::isEnemy(int x, int y){
 int FloorMap::damageCalc(Actor a, Actor b){
 	float t = b.atk/a.def;
 	t *= b.level;
-	if(getRand(0,100) < b.acc)
+	if(getRand(0,100) < b.acc){
+		if(getRand(1,15) <= b.luck){
+			t *= -2.2;
+			if (t < -1)
+				return (int)t;
+			else
+				return -1;
+		}
 		return max((int)t,1);
+	}
 	else
 		return 0;
 }
@@ -578,8 +596,15 @@ int FloorMap::damageCalc(Actor a, Actor b){
 void FloorMap::attackEnemy(Player &player, Logger &log, int eno){
 	eno-=1;
 	int t = damageCalc(enemyList[eno],player);
-	if(t)
-		log.logDamage(player.pName,enemyList[eno].name,t);
+	if(t){
+		if(t < 0){
+			t = -t;
+			log.logCrit(player.pName,enemyList[eno].name,t);
+		}
+		else{
+			log.logDamage(player.pName,enemyList[eno].name,t);
+		}
+	}
 	else
 		log.logMiss(player.pName);
 	if(enemyList[eno].getHit(t)){
@@ -623,4 +648,10 @@ void FloorMap::putStairs(){
 		}
 	}
 	floorMap[tx][ty] = STAIROUT;
+}
+
+void FloorMap::goToNextLevel(Logger &log, Graphics &graphics){
+	log.clearLog();
+	this->setFloor(log,this->floorNo+1);
+	this->genMap(graphics);
 }
