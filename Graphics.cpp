@@ -25,8 +25,9 @@ Graphics::~Graphics(){
 //Returns surface for the image. Load image to memory only once
 SDL_Surface* Graphics::loadImage(const std::string &filePath){
 	if(spriteSheets.count(filePath) == 0){
+		std::cout<<"Loading Image :"<<filePath<<std::endl;
 		spriteSheets[filePath] = IMG_Load(filePath.c_str());
-		SDL_SetColorKey( spriteSheets[filePath], SDL_TRUE, SDL_MapRGB( spriteSheets[filePath]->format,0,0xFF,0xFF) );
+		//SDL_SetColorKey( spriteSheets[filePath], SDL_TRUE, SDL_MapRGB( spriteSheets[filePath]->format,0,0xFF,0xFF) );
 	}
 	return spriteSheets[filePath];
 }
@@ -34,6 +35,7 @@ SDL_Surface* Graphics::loadImage(const std::string &filePath){
 //Returns font for a ttf file. Loads font only once
 TTF_Font* Graphics::loadFont(const std::string &filePath, int size){
 	if(fontList.count(filePath) == 0){
+		std::cout<<"Loading Font :"<<filePath<<std::endl;
 		fontList[filePath] = TTF_OpenFont( filePath.c_str(), size );
 	}
 	return fontList[filePath];

@@ -13,14 +13,14 @@ bool Room::isIntersecting(Room room){
 }
 
 FloorMap::FloorMap(){
-	;
+	std::cout<<"Map Created"<<std::endl;
 }
 
 //Initialize floor map class, set floor to 1, set sprites.
 FloorMap::FloorMap(Graphics &graphics){
-	//int seed = 1530335882;
-	int seed = time(NULL);
-	printf("Seed:%d\n",seed);
+	int seed = 1531502359;
+	//int seed = time(NULL);
+	std::cout<<"Seed: "<<seed<<std::endl;
 	srand(seed);
 	roomList = NULL;
 	playerPos = Vector2(-1,-1);
@@ -32,12 +32,14 @@ FloorMap::FloorMap(Graphics &graphics){
 
 FloorMap::~FloorMap(){
 	free();
+	std::cout<<"Map Destroyed"<<std::endl;
 }
 
 void FloorMap::free(){
 	if(roomList!=NULL)
 		delete[] roomList;
-	enemyList.erase(enemyList.begin(),enemyList.end());
+	enemyList.clear();
+	itemList.clear();
 }
 
 //Set the floor number and log it
@@ -163,6 +165,7 @@ void FloorMap::setSprites(){
 	SDL_Rect r6 = {500,0,100,100};
 	SDL_Rect r10 = {0,100,100,100};
 	SDL_Rect r9 = {100,100,100,100};
+	SDL_Rect r11 = {200,100,100,100};
 	tileClip.push_back(r);		//WALL
 	tileClip.push_back(r);		//EMPTYOUT
 	tileClip.push_back(r2);		//EMPTYSEEN
@@ -174,6 +177,7 @@ void FloorMap::setSprites(){
 	tileClip.push_back(r);		//STAIROUT
 	tileClip.push_back(r9);		//STAIRBRIGHT
 	tileClip.push_back(r10);	//STAIRSEEN
+	tileClip.push_back(r11);	//CHEST2CLOSED
 }
 
 //Draws the base map on screen
@@ -225,6 +229,13 @@ void FloorMap::drawEnemy(Graphics &graphics){
 	for(int i = 0 ; i < enemyList.size(); i++){
 		if(enemyList[i].visible)
 			enemyList[i].draw(graphics);
+	}
+}
+
+void FloorMap::drawItems(Graphics &graphics){
+	for(int i = 0 ; i < itemList.size(); i++){
+		std::cout<<i<<std::endl;
+		itemList[i].draw(graphics);
 	}
 }
 
@@ -302,20 +313,37 @@ void FloorMap::handleMove(Player &player, Logger &log, SDL_Keycode key, int curr
 				//printf("RIGHT\n");
 				break;
 		}
+		int t;
 		if(floorMap[player.x][player.y] == STAIRSEEN){
 			this->goToNextLevel(log,graphics);
 			player.setPosition(this->putPlayer());
 			return;
 		}
+		else if(t = isItem(player.x,player.y)){
+			t--;
+			Item tempItem = itemList[t];
+			itemList.erase(itemList.begin()+t);
+			player.useItem(tempItem,log);
+
+		}
 		if(ret){
 			currentEnemyProcess = 0;
-			//printf("Enemies Turn\n");
 		}
 	}
 	else if(currentEnemyProcess != -1 && currentFrame <= 0){
-		//printf("Moving Enemies\n");
 		moveEnemies(log,player);
 	}
+}
+
+int FloorMap::isItem(int x, int y){
+	if(isWalkable(x,y)){
+		for(int i = 0; i < itemList.size() ; i++){
+			if(x == itemList[i].x && y == itemList[i].y){
+				return i+1;
+			}
+		}
+	}
+	return 0;
 }
 
 int FloorMap::highlight(int tiletype){
@@ -324,6 +352,59 @@ int FloorMap::highlight(int tiletype){
 		case STAIRSEEN:return STAIRBRIGHT;
 		default: return tiletype;
 	}
+}
+
+/*
+					atkUp	defUp	luckUp	potionSmall		potionLarge		healthUp
+	Normal Chest :	10%		10%		5%		50%				15%				10%
+	Blue Chests	 :	15%		15%		25%		5%				25%				15%
+*/
+void FloorMap::openChest(int posx, int posy, Player &player){
+	int cType = floorMap[posx][posy] == CHEST2CLOSED ? 1 : 0;
+	int level = 1, type;
+	if(cType){
+		int t = getRand(1,100);
+		if(t <= 10)
+			type = 0;
+		else if(t <= 20)
+			type = 1;
+		else if(type <= 25)
+			type = 2;
+		else if(type <= 75)
+			type = 3;
+		else if(type <= 90){
+			type = 4;
+			level = 2;
+		}
+		else
+			type = 5;
+	}
+	else{
+		int t = getRand(1,100);
+		if(t <= 15)
+			type = 0;
+		else if(t <= 30)
+			type = 1;
+		else if(type <= 55)
+			type = 2;
+		else if(type <= 60)
+			type = 3;
+		else if(type <= 85){
+			type = 4;
+			level = 2;
+		}
+		else
+			type = 5;
+	}
+
+	switch(type){
+		case 0:case 1:case 2:case 5:
+		level *= getRand(4,7);break;
+		default:
+		level *= 0.1*player.health ;break;
+	}
+	this->floorMap[posx][posy] = EMPTYSEEN;
+	this->itemList.push_back(Item(posx,posy,type,level));
 }
 
 bool FloorMap::movePlayer(Logger &log, int direction, Player &player){
@@ -348,6 +429,10 @@ bool FloorMap::movePlayer(Logger &log, int direction, Player &player){
 	else if( t = isEnemy(posx,posy) ){
 		ret = true;
 		attackEnemy(player,log,t);
+	}
+	else if( floorMap[posx][posy] == CHESTCLOSED || floorMap[posx][posy] == CHEST2CLOSED){
+		ret = true;
+		openChest(posx,posy,player);
 	}
 	updateView();
 	return ret;
@@ -402,7 +487,10 @@ void FloorMap::convert(int px, int py){
 			floorMap[px][py] = EMPTYSEEN;
 			break;
 		case CHESTOUT:
-			floorMap[px][py] = CHESTCLOSED;
+			if(getRand(1,100)<BLUECHESTCHANCE)
+				floorMap[px][py] = CHEST2CLOSED;
+			else
+				floorMap[px][py] = CHESTCLOSED;
 			break;
 		case WALLEDGEOUT:
 			floorMap[px][py] = WALLEDGE;
@@ -575,7 +663,7 @@ int FloorMap::isEnemy(int x, int y){
 	return 0;
 }
 
-int FloorMap::damageCalc(Actor a, Actor b){
+int FloorMap::damageCalc(Actor &a, Actor &b){
 	float t = b.atk/a.def;
 	t *= b.level;
 	if(getRand(0,100) < b.acc){
@@ -618,7 +706,7 @@ void FloorMap::attackEnemy(Player &player, Logger &log, int eno){
 	}
 }
 
-int FloorMap::getDisttoPlayer(Enemy e){
+int FloorMap::getDisttoPlayer(Enemy &e){
 	float d[5];
 	int playerX = playerPos.x, playerY = playerPos.y;
 	d[0] = isFree(e.x-1,e.y)? dist(e.x-1,e.y,playerX,playerY) : MAX_DIST;
@@ -629,7 +717,7 @@ int FloorMap::getDisttoPlayer(Enemy e){
 	return min(d,5);
 }
 
-int FloorMap::getXP(Enemy enemy){
+int FloorMap::getXP(Enemy &enemy){
 	float t = 1.5;
 	t = t*enemy.level*((enemy.type+3)/3.0);
 	return t;

@@ -1,6 +1,7 @@
 #include "Logger.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <iostream>
 
 /* Takes 2 names
  * Format : A attacks B
@@ -83,6 +84,29 @@ void Logger::logCrit(std::string a,std::string b,int d){
 	logAdd(s.str());
 }
 
+void Logger::logStatA(){
+	logAdd("Attack stat boosted slightly");
+}
+
+void Logger::logStatD(){
+	logAdd("Defense stat boosted slightly");
+}
+
+void Logger::logStatH(){
+	logAdd("Health stat boosted slightly");
+}
+
+void Logger::logStatL(){
+	logAdd("Luck was boosted slightly");
+}
+
+void Logger::logHeal(int a){
+	std::stringstream s;
+	s.str("");
+	s<<"Healed "<<a<<" HP";
+	logAdd(s.str());
+}
+
 //Renders the log messages using graphics. Newest messages are at bottom
 void Logger::render(Graphics &graphics){
 	TTF_Font* gFont = graphics.loadFont(Log::fontName,Log::size);
@@ -99,4 +123,5 @@ void Logger::logAdd(std::string logm){
 	if(logMessages.size() > Log::MAXLOGMESSAGES){
 		logMessages.pop_front();
 	}
+	std::cout<<"Log Length : "<<logMessages.size()<<std::endl;
 }
