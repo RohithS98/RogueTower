@@ -95,6 +95,7 @@ void Game::draw(Graphics &graphics){
 	graphics.setViewPort(GAME_VIEWPORT);
 	fmap.drawMap(graphics);
 	fmap.drawViewCone(graphics);
+	fmap.drawItems(graphics);
 	player.draw(graphics);
 	fmap.drawEnemy(graphics);
 	graphics.setViewPort(LOG_VIEWPORT);

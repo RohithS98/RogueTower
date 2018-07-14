@@ -2,8 +2,15 @@
 
 using namespace std;
 
-void Actor::setSprite(Graphics &graphics, const std::string &filePath, int sourceX,
-					int sourceY, int width, int height){
+Actor::Actor(){
+	std::cout << "Actor Created" << std::endl;
+}
+
+Actor::~Actor(){
+	std::cout << "Actor Deleted" << std::endl;
+}
+
+void Actor::setSprite(Graphics &graphics, const std::string &filePath, int sourceX,int sourceY, int width, int height){
 	sourceRect.x = sourceX;
 	sourceRect.y = sourceY;
 	sourceRect.w = width;
@@ -23,7 +30,13 @@ void Enemy::draw(Graphics &graphics){
 	graphics.blitSurface( spriteSheet, &sourceRect, &destRect );
 }
 
-int min(int a,int b);
+Player::Player(){
+	std::cout << "Player Created" << std::endl;
+}
+
+Player::~Player(){
+	std::cout << "Player Destroyed" << std::endl;
+}
 
 int Player::getXP(){
 	return 3*level*log10(level) + 15;
@@ -42,7 +55,7 @@ void Player::boostHealth(int a){
 }
 
 void Player::boostLuck(int a){
-	luck += a;
+	luck = min(10,luck+a);
 }
 
 void Player::boostAccuracy(int a){
@@ -51,6 +64,16 @@ void Player::boostAccuracy(int a){
 
 void Player::restoreHealth(int a){
 	health = min(health + a,maxhealth);
+}
+
+void Player::useItem(Item item, Logger &log){
+	switch(item.type){
+		case atkUp: boostAttack(item.strength);log.logStatA();break;
+		case defUp: boostDefense(item.strength);log.logStatD();break;
+		case luckUp: boostLuck(item.strength);log.logStatL();break;
+		case potions:case potionl: restoreHealth(item.strength);log.logHeal(item.strength);break;
+		case healthUp: boostHealth(item.strength);log.logStatH();break;
+	}
 }
 
 void Player::levelup(){
@@ -133,6 +156,14 @@ string Player::getHealthStr(){
 	s1.str("");
 	s1<<health<<" / "<<maxhealth;
 	return s1.str();
+}
+
+Enemy::Enemy(){
+	std::cout << "Enemy Created" << std::endl;
+}
+
+Enemy::~Enemy(){
+	std::cout << "Enemy Destroyed" << std::endl;
 }
 
 void Enemy::init(Graphics &graphics, int etype, int elevel){

@@ -6,8 +6,11 @@
 #include <time.h>
 #include <math.h>
 #include <sstream>
+#include <iostream>
 #include "Graphics.h"
 #include "Utils.h"
+#include "Item.h"
+#include "Logger.h"
 
 class Graphics;
 
@@ -29,6 +32,8 @@ namespace ActorConst{
 
 class Actor{
 	public:
+	Actor();
+	~Actor();
 	int health,speed,def,atk,x,y,level,maxhealth,acc,luck;
 	void setSprite(Graphics &graphics, const std::string &filePath, int sourceX,
 					int sourceY, int width, int height);
@@ -40,16 +45,13 @@ class Actor{
 
 class Player : public Actor{
 	public:
+	Player();
+	~Player();
 	void init(Graphics &graphics, int type = 0,std::string name = "LOL");
 	void setPosition(Vector2 vec);
 	Vector2 getPosition();
 	bool gainXP(int);
-	void boostAttack(int);
-	void boostDefense(int);
-	void boostHealth(int);
-	void restoreHealth(int);
-	void boostLuck(int);
-	void boostAccuracy(int);
+	void useItem(Item item, Logger &log);
 	bool getHit(int);
 	void renderStat(Graphics &graphics);
 	std::string getHealthStr();
@@ -60,10 +62,18 @@ class Player : public Actor{
 	std::string getString(int x);
 	int getXP();
 	void levelup();
+	void boostAttack(int);
+	void boostDefense(int);
+	void boostHealth(int);
+	void restoreHealth(int);
+	void boostLuck(int);
+	void boostAccuracy(int);
 };
 
 class Enemy : public Actor{
 	public:
+	Enemy();
+	~Enemy();
 	void init(Graphics &graphics, int type, int level);
 	int getType();
 	bool getHit(int);
