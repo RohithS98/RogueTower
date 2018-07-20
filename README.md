@@ -8,7 +8,7 @@ My first attempt at creating a Rogue-like. Currently under development
 * Log for events
 
 ## TODO(a lot):
-* [ ] Add enemy level scaling
+* [x] Add enemy level scaling
 * [x] Add XP gain
 * [ ] Add game over
 * [ ] Add Title screen
@@ -16,5 +16,5 @@ My first attempt at creating a Rogue-like. Currently under development
 * [x] Stairs and multiple levels
 * [ ] Name input
 * [ ] Good sprites for enemies
-* [ ] Chests that actually work
-* [ ] Different items
+* [x] Chests that actually work
+* [x] Different items
