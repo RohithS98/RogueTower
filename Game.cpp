@@ -3,8 +3,6 @@
 #include <iostream>
 
 #include "Game.h"
-//#include "Actors.h"
-//#include "Utils.h"
 
 //Initializes SDL and starts game loop
 Game::Game(){
@@ -22,6 +20,8 @@ Game::~Game(){
 	#ifdef DEBUG
 	std::cout<<"Quiting SDL"<<std::endl;
 	#endif
+	fmap.freeSprites();
+	player.freeSprites();
 	TTF_Quit();
 	IMG_Quit();
 	SDL_Quit();
@@ -42,17 +42,17 @@ void Game::gameLoop(){
 	Vector2 playPos = fmap.putPlayer();
 	player.init(graphics);
 	player.setPosition(playPos);
-	//fmap.updateView();
 	currentKey = 0;
 	currentFrame = -1;
+	bool running = true;
 
 	float LAST_UPDATE;
-	while(true){
+	while(running){
 		LAST_UPDATE = SDL_GetTicks();
 		graphics.clear();
 		while(SDL_PollEvent(&e) != 0){	//Handle all inputs
 			if( e.type == SDL_QUIT ){
-				return ;
+				running = false;
 			}
 			if( e.type == SDL_KEYDOWN && e.key.repeat == 0 ){
 				switch(e.key.keysym.sym){
@@ -86,6 +86,7 @@ void Game::gameLoop(){
 			SDL_Delay(FRAME_TIME - CURRENT_TIME + LAST_UPDATE);
 		}
 	}
+
 }
 
 //Draws all the graphics
@@ -95,6 +96,7 @@ void Game::draw(Graphics &graphics){
 	graphics.setViewPort(GAME_VIEWPORT);
 	fmap.drawMap(graphics);
 	fmap.drawViewCone(graphics);
+	fmap.drawItems(graphics);
 	player.draw(graphics);
 	fmap.drawEnemy(graphics);
 	graphics.setViewPort(LOG_VIEWPORT);

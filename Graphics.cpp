@@ -18,6 +18,14 @@ Graphics::~Graphics(){
 	#ifdef DEBUG
 	std::cout<<"Stoping graphics"<<std::endl;
 	#endif
+	for (std::map<std::string, TTF_Font*>::iterator it = fontList.begin(); it!= fontList.end(); it++){
+		//std::cout<<it->first<<" "<<it->second<<std::endl;
+		TTF_CloseFont(it->second);
+	}
+	for (std::map<std::string, SDL_Surface*>::iterator it = spriteSheets.begin(); it!= spriteSheets.end(); it++){
+		//sstd::cout<<it->first<<" "<<it->second<<std::endl;
+		SDL_FreeSurface(it->second);
+	}
 	SDL_DestroyRenderer( renderer );
 	SDL_DestroyWindow( window );
 }
@@ -25,8 +33,10 @@ Graphics::~Graphics(){
 //Returns surface for the image. Load image to memory only once
 SDL_Surface* Graphics::loadImage(const std::string &filePath){
 	if(spriteSheets.count(filePath) == 0){
+		#ifdef DEBUG
+		std::cout<<"Loading Image :"<<filePath<<std::endl;
+		#endif
 		spriteSheets[filePath] = IMG_Load(filePath.c_str());
-		SDL_SetColorKey( spriteSheets[filePath], SDL_TRUE, SDL_MapRGB( spriteSheets[filePath]->format,0,0xFF,0xFF) );
 	}
 	return spriteSheets[filePath];
 }
@@ -34,6 +44,9 @@ SDL_Surface* Graphics::loadImage(const std::string &filePath){
 //Returns font for a ttf file. Loads font only once
 TTF_Font* Graphics::loadFont(const std::string &filePath, int size){
 	if(fontList.count(filePath) == 0){
+		#ifdef DEBUG
+		std::cout<<"Loading Font :"<<filePath<<std::endl;
+		#endif
 		fontList[filePath] = TTF_OpenFont( filePath.c_str(), size );
 	}
 	return fontList[filePath];
@@ -81,7 +94,9 @@ void Graphics::blitText(TTF_Font* gFont,const std::string text, SDL_Color col, i
 	SDL_Surface* textSurf = TTF_RenderText_Solid( gFont, text.c_str(), col);
 	SDL_Rect source = {0, 0, textSurf->w, textSurf->h};
 	SDL_Rect dest = {x, y, textSurf->w, textSurf->h};
-	blitSurface(SDL_CreateTextureFromSurface(renderer ,	textSurf),&source,&dest);
+	SDL_Texture* texttex = SDL_CreateTextureFromSurface(renderer ,	textSurf);
+	blitSurface(texttex,&source,&dest);
+	SDL_DestroyTexture(texttex);
 	SDL_FreeSurface( textSurf );
 }
 //Blits text using a font and given string and colour onto the screen(centered along X)
@@ -89,6 +104,8 @@ void Graphics::blitTextCenterX(TTF_Font* gFont,const std::string text, SDL_Color
 	SDL_Surface* textSurf = TTF_RenderText_Solid( gFont, text.c_str(), col);
 	SDL_Rect source = {0, 0, textSurf->w, textSurf->h};
 	SDL_Rect dest = {(xmax-textSurf->w)/2 + xoff, y, textSurf->w, textSurf->h};
-	blitSurface(SDL_CreateTextureFromSurface(renderer ,	textSurf),&source,&dest);
+	SDL_Texture* texttex = SDL_CreateTextureFromSurface(renderer ,	textSurf);
+	blitSurface(texttex,&source,&dest);
+	SDL_DestroyTexture(texttex);
 	SDL_FreeSurface( textSurf );
 }

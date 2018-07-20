@@ -27,6 +27,11 @@ class Logger{
 	void logXP(int xp);
 	void logLevelUp(int level);
 	void logCrit(std::string,std::string,int);
+	void logStatA();
+	void logStatD();
+	void logStatH();
+	void logStatL();
+	void logHeal(int);
 	std::deque<std::string> logMessages;
 	void render(Graphics &graphics);
 	private:

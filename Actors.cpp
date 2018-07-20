@@ -1,15 +1,42 @@
 #include "Actors.h"
 
-using namespace std;
+bool Player::isSpriteLoaded = false;
+SDL_Texture* Player:: spriteSheet = NULL;
+bool Enemy::isSpriteLoaded = false;
+SDL_Texture* Enemy:: spriteSheet = NULL;
 
-void Actor::setSprite(Graphics &graphics, const std::string &filePath, int sourceX,
-					int sourceY, int width, int height){
+Actor::Actor(){
+	#ifdef DEBUG
+	std::cout << "Actor Created" << std::endl;
+	#endif
+}
+
+Actor::~Actor(){
+	#ifdef DEBUG
+	std::cout << "Actor Deleted" << std::endl;
+	#endif
+}
+
+void Player::setSprite(Graphics &graphics, const std::string &filePath, int sourceX,int sourceY, int width, int height){
 	sourceRect.x = sourceX;
 	sourceRect.y = sourceY;
 	sourceRect.w = width;
 	sourceRect.h = height;
-	spriteSheet = SDL_CreateTextureFromSurface(graphics.getRenderer(),
-												graphics.loadImage(filePath));
+	if(!isSpriteLoaded){
+		spriteSheet = SDL_CreateTextureFromSurface(graphics.getRenderer(), graphics.loadImage(filePath));
+		isSpriteLoaded = true;
+	}
+}
+
+void Enemy::setSprite(Graphics &graphics, const std::string &filePath, int sourceX,int sourceY, int width, int height){
+	sourceRect.x = sourceX;
+	sourceRect.y = sourceY;
+	sourceRect.w = width;
+	sourceRect.h = height;
+	if(!isSpriteLoaded){
+		spriteSheet = SDL_CreateTextureFromSurface(graphics.getRenderer(), graphics.loadImage(filePath));
+		isSpriteLoaded = true;
+	}
 }
 
 void Player::draw(Graphics &graphics){
@@ -18,15 +45,26 @@ void Player::draw(Graphics &graphics){
 }
 
 void Enemy::draw(Graphics &graphics){
+	setSprite(graphics,"resources/enemysprite1.png",(type%ActorConst::SPRITES_PER_LINE)*100,(type/ActorConst::SPRITES_PER_LINE)*100,100,100);
 	float halfScale = (ActorConst::enemyScale - 1.0)/2;
 	SDL_Rect destRect = {(y-halfScale)*global::TILE_SIZE,(x-halfScale)*global::TILE_SIZE,global::TILE_SIZE*ActorConst::enemyScale,global::TILE_SIZE*ActorConst::enemyScale};
 	graphics.blitSurface( spriteSheet, &sourceRect, &destRect );
 }
 
-int min(int a,int b);
+Player::Player(){
+	#ifdef DEBUG
+	std::cout << "Player Created" << std::endl;
+	#endif
+}
+
+Player::~Player(){
+	#ifdef DEBUG
+	std::cout << "Player Destroyed" << std::endl;
+	#endif
+}
 
 int Player::getXP(){
-	return 3*level*log10(level) + 15;
+	return 4*level*log10(level) + 15;
 }
 
 void Player::boostAttack(int a){
@@ -39,10 +77,11 @@ void Player::boostDefense(int a){
 
 void Player::boostHealth(int a){
 	maxhealth += a;
+	health = min(health + a,maxhealth);
 }
 
 void Player::boostLuck(int a){
-	luck += a;
+	luck = min(10,luck+a);
 }
 
 void Player::boostAccuracy(int a){
@@ -51,6 +90,16 @@ void Player::boostAccuracy(int a){
 
 void Player::restoreHealth(int a){
 	health = min(health + a,maxhealth);
+}
+
+void Player::useItem(Item &item, Logger &log){
+	switch(item.type){
+		case atkUp: boostAttack(item.strength);log.logStatA();break;
+		case defUp: boostDefense(item.strength);log.logStatD();break;
+		case luckUp: boostLuck(item.strength);log.logStatL();break;
+		case potions:case potionl: restoreHealth(item.strength);log.logHeal(item.strength);break;
+		case healthUp: boostHealth(item.strength);log.logStatH();break;
+	}
 }
 
 void Player::levelup(){
@@ -74,7 +123,7 @@ bool Player::gainXP(int exp){
 }
 
 std::string Player::getString(int x){
-	stringstream st1;
+	std::stringstream st1;
 	st1.str("");
 	st1<<x;
 	return st1.str();
@@ -102,10 +151,10 @@ void Player::renderStat(Graphics &graphics){
 	graphics.blitTextCenterX(gFont,getString(nextxp),ActorConst::statvalcol,105, 25*i++,105);
 }
 
-void Player::init(Graphics &graphics, int type,string name){
+void Player::init(Graphics &graphics, int type, std::string name){
 	setSprite(graphics,"resources/blocksprite2.png",300,0,100,100);
 	pName = name;
-	maxhealth = getRand(17,20);
+	maxhealth = getRand(25,32);
 	health = maxhealth;
 	atk = getRand(3,5);
 	def = getRand(3,5);
@@ -128,21 +177,33 @@ Vector2 Player::getPosition(){
 	return Vector2(x,y);
 }
 
-string Player::getHealthStr(){
-	stringstream s1;
+std::string Player::getHealthStr(){
+	std::stringstream s1;
 	s1.str("");
 	s1<<health<<" / "<<maxhealth;
 	return s1.str();
 }
 
-void Enemy::init(Graphics &graphics, int etype, int elevel){
-	setSprite(graphics,"resources/enemysprite2.png",0+etype*100,0,100,100);
+Enemy::Enemy(){
+	#ifdef DEBUG
+	std::cout << "Enemy Created" << std::endl;
+	#endif
+}
+
+Enemy::~Enemy(){
+	#ifdef DEBUG
+	std::cout << "Enemy Destroyed" << std::endl;
+	#endif
+}
+
+void Enemy::init(int etype, int elevel){
 	type = etype;
 	level = elevel;
 	x = 0;
 	y = 0;
 	setStats();
 	health = maxhealth;
+	isSpriteLoaded = false;
 }
 
 int Enemy::getType(){
@@ -156,10 +217,12 @@ void Enemy::setStats(){
 			basea = 2;based = 1;basemh = 5;bases = 1;baseac = 85;basel = 1;name = "Blob";break;
 		case ETYPE2:
 			basea = 3;based = 2;basemh = 4;bases = 1;baseac = 70;basel = 1;name = "Ghost";break;
+		case ETYPE3:
+			basea = 2;based = 3;basemh = 3;bases = 1;baseac = 80;basel = 2;name = "Floor";break;
 	}
-	atk = basea + (level-1)*getRand(1,2);
-	def = based + (level-1)*getRand(1,2);
-	maxhealth = basemh + (level-1)*getRand(2,4);
+	atk = basea + (level-1)*getRand(2,3);
+	def = based + (level-1)*getRand(2,3);
+	maxhealth = basemh + (level-1)*getRand(2,5);
 	acc = baseac + (level/2)*getRand(0,1) + getRand(0,1)*(level/2);
 	luck = basel + ((level-1)/2)*getRand(0,1);
 }
@@ -186,4 +249,16 @@ bool Player::getHit(int damage){
 		return true;
 	}
 	return false;
+}
+
+void Player::freeSprites(){
+	SDL_DestroyTexture(spriteSheet);
+	spriteSheet = NULL;
+	isSpriteLoaded = false;
+}
+
+void Enemy::freeSprites(){
+	SDL_DestroyTexture(spriteSheet);
+	spriteSheet = NULL;
+	isSpriteLoaded = false;
 }
